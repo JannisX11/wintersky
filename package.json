@@ -1,0 +1,22 @@
+{
+  "name": "wintersky",
+  "version": "0.0.1",
+  "description": "Particle emitter for Minecraft bedrock particle effects",
+  "main": "src/wintersky.js",
+  "scripts": {
+    "build": "browserify ./src/browser.js -o ./dist/wintersky.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JannisX11/wintersky.git"
+  },
+  "author": "JannisX11",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JannisX11/wintersky/issues"
+  },
+  "homepage": "https://github.com/JannisX11/wintersky#readme",
+  "devDependencies": {
+    "browserify": "^16.5.2"
+  }
+}
