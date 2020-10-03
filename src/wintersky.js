@@ -1,3 +1,5 @@
+const Config = require("./config")
+
 (function() {
 
 const MathUtil = {
@@ -46,19 +48,16 @@ const Wintersky = {
 
 
 class Wintersky {
-	constructor() {
+	constructor(config) {
 		this.object = new THREE.Object3D();
 		this.material = new THREE.MeshBasicMaterial({
 			color: 0xffffff,
 			transparent: true,
 			alphaTest: 0.2
 		});
-		if (Wintersky.emitters.includes(this) == false) {
-			Wintersky.emitter.push(this);
-		}
-		this.properties = {
+		Wintersky.emitters.push(this);
 
-		};
+		this.config = config instanceof Config ? config : new Config(config);
 
 
 		this.particles = [];
@@ -83,6 +82,59 @@ class Wintersky {
 		obj["variable.emitter_random_3"] = this.random_vars[2];
 		obj["variable.emitter_random_4"] = this.random_vars[3];
 		return obj;
+	}
+	updateMaterial() {
+		var url;
+		var path = Data.particle.texture.inputs.path.value;
+		if (Data.particle.texture.inputs.image.image) {
+			url = Data.particle.texture.inputs.image.image.data;
+		} else {
+			if (path == 'textures/particle/particles') {
+				url = 'assets/default_particles.png';
+	
+			} else if (path == 'textures/flame_atlas' || path == 'textures/particle/flame_atlas') {
+				url = 'assets/flame_atlas.png';
+	
+			} else if (path == 'textures/particle/campfire_smoke') {
+				url = 'assets/campfire_smoke.png';
+			} else {
+				url = 'assets/missing.png';
+			}
+		}
+		var tex = new THREE.TextureLoader().load(url, function(a, b) {
+			function factorize(input, axis, factor) {
+				if (!input.value || !input.value[axis]) return;
+				var arr = input.value.slice()
+				var val = arr[axis]
+				if (isNaN(val)) {
+					arr[axis] = `${factor} * (${val})`
+				} else {
+					arr[axis] = factor * parseFloat(val);
+				}
+				input.value = arr;
+			}
+	
+			tex.magFilter = THREE.NearestFilter
+			tex.minFilter = THREE.NearestFilter
+			System.material.map = tex
+			var x_factor = System.material.map.image.naturalWidth / this.Flipbook.width;
+			var y_factor = System.material.map.image.naturalHeight / this.Flipbook.height;
+			if (x_factor && x_factor != 1) {
+				factorize(Data.particle.texture.inputs.uv, 0, x_factor)
+				factorize(Data.particle.texture.inputs.uv_size, 0, x_factor)
+				factorize(Data.particle.texture.inputs.uv_step, 0, x_factor)
+			}
+			if (y_factor && y_factor != 1) {
+				factorize(Data.particle.texture.inputs.uv, 1, y_factor)
+				factorize(Data.particle.texture.inputs.uv_size, 1, y_factor)
+				factorize(Data.particle.texture.inputs.uv_step, 1, y_factor)
+			}
+			this.Flipbook.width = System.material.map.image.naturalWidth;
+			this.Flipbook.height = System.material.map.image.naturalHeight;
+			if (typeof cb === 'function') {
+				cb()
+			}
+		})
 	}
 	start() {
 
@@ -203,10 +255,10 @@ class Wintersky {
 
 		if (Data.emitter.rate.mode.value == 'steady') {
 			var max = Data.emitter.rate.maximum.calculate(this.params())||0;
-			max = MathUtil.clamp(max, 0, Wintersky.config.max_emitter_particles)
+			max = MathUtil.clamp(max, 0, Wintersky.global_config.max_emitter_particles)
 			count = MathUtil.clamp(count, 0, max-this.particles.length);
 		} else {
-			count = MathUtil.clamp(count, 0, Wintersky.config.max_emitter_particles-this.particles.length);
+			count = MathUtil.clamp(count, 0, Wintersky.global_config.max_emitter_particles-this.particles.length);
 		}
 		for (var i = 0; i < count; i++) {
 			if (this.dead_particles.length) {
@@ -220,7 +272,7 @@ class Wintersky {
 	}
 }
 Wintersky.emitters = [];
-Wintersky.config = {
+Wintersky.global_config = {
 	max_emitter_particles: 10000
 }
 
@@ -454,84 +506,7 @@ Wintersky.Particle = class {
 		this.geometry.uvsNeedUpdate = true
 	}
 }
-
-function initParticles() {
-	System.material = new THREE.MeshBasicMaterial({
-		color: 0xffffff,
-		transparent: true,
-		alphaTest: 0.2
-	});
-	updateMaterial()
-
-	System.group = new THREE.Group()
-	View.scene.add(System.group)
-	System.tick = false;
-
-	forEachInput(input => {
-		if (input.updatePreview) {
-			var data = input.calculate()
-			input.updatePreview(data)
-		}
-	})
-	Molang.variableHandler = function (key) {
-		return Emitter.creation_values[key] || Emitter.tick_values[key]
-	}
-
-	Emitter = new EmitterClass().start()
-}
-function updateMaterial(cb) {
-	var url;
-	var path = Data.particle.texture.path.value;
-	if (Data.particle.texture.image.image) {
-		url = Data.particle.texture.image.image.data;
-	} else {
-		if (path == 'textures/particle/particles') {
-			url = 'assets/default_particles.png';
-
-		} else if (path == 'textures/flame_atlas' || path == 'textures/particle/flame_atlas') {
-			url = 'assets/flame_atlas.png';
-
-		} else if (path == 'textures/particle/campfire_smoke') {
-			url = 'assets/campfire_smoke.png';
-		} else {
-			url = 'assets/missing.png';
-		}
-	}
-	var tex = new THREE.TextureLoader().load(url, function(a, b) {
-		function factorize(input, axis, factor) {
-			if (!input.value || !input.value[axis]) return;
-			var arr = input.value.slice()
-			var val = arr[axis]
-			if (isNaN(val)) {
-				arr[axis] = `${factor} * (${val})`
-			} else {
-				arr[axis] = factor * parseFloat(val);
-			}
-			input.value = arr;
-		}
-
-		tex.magFilter = THREE.NearestFilter
-		tex.minFilter = THREE.NearestFilter
-		System.material.map = tex
-		var x_factor = System.material.map.image.naturalWidth / Flipbook.width;
-		var y_factor = System.material.map.image.naturalHeight / Flipbook.height;
-		if (x_factor && x_factor != 1) {
-			factorize(Data.particle.texture.uv, 0, x_factor)
-			factorize(Data.particle.texture.uv_size, 0, x_factor)
-			factorize(Data.particle.texture.uv_step, 0, x_factor)
-		}
-		if (y_factor && y_factor != 1) {
-			factorize(Data.particle.texture.uv, 1, y_factor)
-			factorize(Data.particle.texture.uv_size, 1, y_factor)
-			factorize(Data.particle.texture.uv_step, 1, y_factor)
-		}
-		Flipbook.width = System.material.map.image.naturalWidth;
-		Flipbook.height = System.material.map.image.naturalHeight;
-		if (typeof cb === 'function') {
-			cb()
-		}
-	})
-}
+Wintersky.Config = Config;
 
 module.exports = Wintersky
 

@@ -26,6 +26,9 @@ function initializeApp() {
 
 	resizeCanvas()
 	animate()
+
+	// Initialize Particles
+	View.wintersky = new Wintersky();
 }
 
 function animate() {
