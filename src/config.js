@@ -16,7 +16,7 @@ class Config {
 	}
 	reset() {
 		this.identifier = '';
-		this.curves = [];
+		this.curves = {};
 		this.space_local_position = false;
 		this.space_local_rotation = false;
 		this.variables_creation_vars = [];
@@ -32,19 +32,19 @@ class Config {
 		this.emitter_lifetime_activation = '';
 		this.emitter_lifetime_expiration = '';
 		this.emitter_shape_mode = '';
-		this.emitter_shape_offset = '';
+		this.emitter_shape_offset = [0, 0, 0];
 		this.emitter_shape_radius = '';
-		this.emitter_shape_half_dimensions = '';
-		this.emitter_shape_plane_normal = '';
+		this.emitter_shape_half_dimensions = [0, 0, 0];
+		this.emitter_shape_plane_normal = [0, 0, 0];
 		this.emitter_shape_surface_only = false;
-		this.particle_appearance_size = '';
+		this.particle_appearance_size = [0, 0];
 		this.particle_appearance_facing_camera_mode = '';
 		this.particle_appearance_material = '';
 		this.particle_direction_mode = '';
-		this.particle_direction_direction = '';
+		this.particle_direction_direction = [0, 0, 0];
 		this.particle_motion_mode = '';
 		this.particle_motion_linear_speed = '';
-		this.particle_motion_linear_acceleration = '';
+		this.particle_motion_linear_acceleration = [0, 0, 0];
 		this.particle_motion_linear_drag_coefficient = '';
 		this.particle_motion_relative_position = '';
 		this.particle_motion_direction = '';
@@ -56,7 +56,7 @@ class Config {
 		this.particle_rotation_rotation = '';
 		this.particle_lifetime_mode = '';
 		this.particle_lifetime_max_lifetime = '';
-		this.particle_lifetime_kill_plane = 0;
+		this.particle_lifetime_kill_plane = [0, 0, 0, 0];
 		this.particle_lifetime_expiration_expression = '';
 		this.particle_lifetime_expire_in = [];
 		this.particle_lifetime_expire_outside = [];
@@ -65,9 +65,9 @@ class Config {
 		this.particle_texture_path = '';
 		this.particle_texture_image = '';
 		this.particle_texture_mode = '';
-		this.particle_texture_uv = '';
-		this.particle_texture_uv_size = '';
-		this.particle_texture_uv_step = '';
+		this.particle_texture_uv = [0, 0];
+		this.particle_texture_uv_size = [0, 0];
+		this.particle_texture_uv_step = [0, 0];
 		this.particle_texture_frames_per_second = 0;
 		this.particle_texture_max_frame = '';
 		this.particle_texture_stretch_to_lifetime = false;
@@ -116,7 +116,7 @@ class Config {
 						new_curve.nodes.push(value);
 					})
 				}
-				this.curves.push(new_curve);
+				this.curves[key] = new_curve;
 			}
 		}
 

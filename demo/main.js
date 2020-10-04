@@ -1,6 +1,6 @@
 const View = {};
 
-function initializeApp() {
+async function initializeApp() {
 	View.canvas = document.getElementById('preview')
 	View.camera = new THREE.PerspectiveCamera(45, 16/9, 0.1, 3000);
 	View.camera.position.set(-6, 3, -6)
@@ -28,12 +28,33 @@ function initializeApp() {
 	animate()
 
 	// Initialize Particles
-	View.wintersky = new Wintersky();
+	let content = await new Promise((resolve, reject) => {
+		var xhr = new XMLHttpRequest();
+		xhr.open('GET', '../examples/rainbow.particle.json', true);
+		xhr.responseType = 'json';
+		xhr.onload = function() {
+			var status = xhr.status;
+			if (status === 200) {
+				resolve(xhr.response);
+			} else {
+				reject(xhr.response);
+			}
+		};
+		xhr.send();
+	})
+	View.wintersky = new Wintersky(content);
+	View.scene.add(View.wintersky.group)
+	View.wintersky.start()
+
+	setInterval(function() {
+		View.wintersky.tick()
+	}, 1000/30)
 }
 
 function animate() {
 	requestAnimationFrame(animate)
 	View.controls.update()
+	if (View.wintersky) View.wintersky.tickParticleRotation();
 	View.renderer.render(View.scene, View.camera);
 }
 function resizeCanvas() {
