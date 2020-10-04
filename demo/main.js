@@ -52,9 +52,9 @@ async function initializeApp() {
 }
 
 function animate() {
-	requestAnimationFrame(animate)
-	View.controls.update()
-	if (View.wintersky) View.wintersky.tickParticleRotation();
+	requestAnimationFrame(animate);
+	View.controls.update();
+	Wintersky.updateFacingRotation(View.camera);
 	View.renderer.render(View.scene, View.camera);
 }
 function resizeCanvas() {

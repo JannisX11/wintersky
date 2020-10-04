@@ -399,8 +399,36 @@ const Wintersky = {
 	}
 };
 */
-function calculateCurve(curve, params) {
-	return 1;
+function calculateCurve(emitter, curve, params) {
+
+	var position = emitter.Molang.parse(curve.input, params);
+	var range = emitter.Molang.parse(curve.range, params);
+
+	position = (position/range) || 0;
+	if (position === Infinity) position = 0;
+
+	if (curve.mode.value == 'linear') {
+
+		var segments = curve.nodes.length-1;
+		position *= segments
+		var index = Math.floor(position);
+		var blend = position%1;
+		var difference = curve.nodes[index+1] - curve.nodes[index];
+		var value = curve.nodes[index] + difference * blend;
+		return value;
+
+	} else if (curve.mode == 'catmull_rom') {
+		var vectors = [];
+		curve.nodes.forEach((val, i) => {
+			vectors.push(new THREE.Vector2(i-1, val))
+		})
+		var spline = new THREE.SplineCurve(vectors);
+
+		var segments = curve.nodes.length-3;
+		position *= segments
+		var pso = (position+1)/(segments+2)
+		return spline.getPoint(pso).y;
+	}
 }
 
 
@@ -411,7 +439,7 @@ class Wintersky {
 		Molang.variableHandler = (key, params) => {
 			return this.creation_values[key]
 				|| this.tick_values[key]
-				|| (this.config.curves[key] && calculateCurve(this.config.curves[key], params))
+				|| (this.config.curves[key] && calculateCurve(this, this.config.curves[key], params))
 		}
 
 		this.object = new THREE.Object3D();
@@ -541,10 +569,10 @@ class Wintersky {
 		})
 	}
 	start() {
-
+		/*
 		for (var i = this.particles.length-1; i >= 0; i--) {
 			this.particles[i].remove()
-		}
+		}*/
 		this.age = 0;
 		this.enabled = true;
 		var params = this.params()
@@ -621,23 +649,23 @@ class Wintersky {
 		}
 		return this;
 	}
-	tickParticleRotation() {
+	updateFacingRotation(camera) {
 		this.particles.forEach(p => {
 
 			switch (this.config.particle_appearance_facing_camera_mode) {
 				case 'lookat_xyz':
-					p.mesh.lookAt(View.camera.position)
+					p.mesh.lookAt(camera.position)
 					break;
 				case 'lookat_y':
-					var v = new THREE.Vector3().copy(View.camera.position);
+					var v = new THREE.Vector3().copy(camera.position);
 					v.y = p.position.y;
 					p.mesh.lookAt(v);
 					break;
 				case 'rotate_xyz':
-					p.mesh.rotation.copy(View.camera.rotation);
+					p.mesh.rotation.copy(camera.rotation);
 					break;
 				case 'rotate_y':
-					p.mesh.rotation.copy(View.camera.rotation);
+					p.mesh.rotation.copy(camera.rotation);
 					p.mesh.rotation.reorder('YXZ');
 					p.mesh.rotation.x = p.mesh.rotation.z = 0;
 					break;
@@ -676,6 +704,11 @@ class Wintersky {
 	}
 }
 Wintersky.emitters = [];
+Wintersky.updateFacingRotation = function(camera) {
+	Wintersky.emitters.forEach(emitter => {
+		emitter.updateFacingRotation(camera);
+	});
+}
 Wintersky.global_config = {
 	max_emitter_particles: 10000
 }
