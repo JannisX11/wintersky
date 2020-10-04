@@ -1,6 +1,6 @@
-const Config = require("./config");
-
-(function() {
+import Molang from 'molangjs';
+import THREE from 'three';
+import Config from './config';
 
 const MathUtil = {
 	roundTo(num, digits) {
@@ -88,8 +88,8 @@ function calculateCurve(emitter, curve, params) {
 class Wintersky {
 	constructor(config) {
 		// this.Molang = new Molang()
-		this.Molang = Molang;
-		Molang.variableHandler = (key, params) => {
+		this.Molang = new Molang();
+		this.Molang.variableHandler = (key, params) => {
 			return this.creation_values[key]
 				|| this.tick_values[key]
 				|| (this.config.curves[key] && calculateCurve(this, this.config.curves[key], params))
@@ -235,7 +235,7 @@ class Wintersky {
 		this.creation_values = {};
 		for (var key in this.creation_variables) {
 			var s = this.creation_variables[key];
-			this.creation_values[key] = Molang.parse(s)
+			this.creation_values[key] = this.Molang.parse(s)
 		}
 		if (this.config.emitter_rate_mode === 'instant') {
 			this.spawnParticles(this.calculate(this.config.emitter_rate_amount, params))
@@ -247,7 +247,7 @@ class Wintersky {
 		this.tick_values = {};
 		for (var key in this.tick_variables) {
 			var s = this.tick_variables[key];
-			this.tick_values[key] = Molang.parse(s, params)
+			this.tick_values[key] = this.Molang.parse(s, params)
 		}
 		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
 			var p_this_tick = this.calculate(this.config.emitter_rate_rate, params)/30
@@ -600,6 +600,4 @@ Wintersky.Particle = class {
 }
 Wintersky.Config = Config;
 
-module.exports = Wintersky
-
-})()
+export default Wintersky
