@@ -1,3 +1,5 @@
+import image from '@rollup/plugin-image';
+
 export default {
 	input: 'src/wintersky.js',
 	output: [
@@ -15,9 +17,11 @@ export default {
 			format: 'umd',
 			globals: {
 				molangjs: 'Molang',
-				three: 'THREE'
+				three: 'THREE',
+				tinycolor2: 'tinycolor'
 			}
 		}
 	],
-	external: ['molangjs', 'three']
+	external: ['molangjs', 'three', 'tinycolor2'],
+	plugins: [image()]
 }

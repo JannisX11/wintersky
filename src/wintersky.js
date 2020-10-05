@@ -1,6 +1,15 @@
 import Molang from 'molangjs';
 import THREE from 'three';
+import tinycolor from 'tinycolor2'
+
 import Config from './config';
+
+import MissingTex from '../assets/missing.png'
+import ParticlesTex from '../assets/particles.png'
+import FlameAtlasTex from '../assets/flame_atlas.png'
+import SoulTex from '../assets/soul.png'
+import CampfireSmokeTex from '../assets/campfire_smoke.png'
+
 
 const MathUtil = {
 	roundTo(num, digits) {
@@ -83,11 +92,40 @@ function calculateCurve(emitter, curve, params) {
 		return spline.getPoint(pso).y;
 	}
 }
+function calculateGradient(gradient, percent) {
+	let index = 0;
+	gradient.forEach((point, i) => {
+		if (point.percent <= percent) index = i;
+	});
+	if (gradient[index] && !gradient[index+1]) {
+		var color = gradient[index].color;
+
+	} else if (!gradient[index] && gradient[index+1]) {
+		var color = gradient[index+1].color;
+
+	} else if (gradient[index] && gradient[index+1]) {
+		// Interpolate
+		var mix = (percent - gradient[index].percent) / (gradient[index+1].percent - gradient[index].percent)
+		var color = tinycolor.mix(gradient[index].color, gradient[index+1].color, mix*100).toHexString()
+
+	} else {
+		var color = '#ffffff'
+	}
+	return new THREE.Color(color);
+}
+function getRandomEuler() {
+	return new THREE.Euler(
+		MathUtil.randomab(-Math.PI, Math.PI),
+		MathUtil.randomab(-Math.PI, Math.PI),
+		MathUtil.randomab(-Math.PI, Math.PI)
+	)
+}
 
 
 class Wintersky {
 	constructor(config) {
-		// this.Molang = new Molang()
+		Wintersky.emitters.push(this);
+
 		this.Molang = new Molang();
 		this.Molang.variableHandler = (key, params) => {
 			return this.creation_values[key]
@@ -95,17 +133,14 @@ class Wintersky {
 				|| (this.config.curves[key] && calculateCurve(this, this.config.curves[key], params))
 		}
 
-		this.object = new THREE.Object3D();
+		this.group = new THREE.Object3D();
 		this.material = new THREE.MeshBasicMaterial({
 			color: 0xffffff,
 			transparent: true,
+			vertexColors: THREE.FaceColors,
 			alphaTest: 0.2
 		});
-		Wintersky.emitters.push(this);
-
 		this.config = config instanceof Config ? config : new Config(config);
-
-		this.group = new THREE.Object3D();
 
 		this.particles = [];
 		this.dead_particles = [];
@@ -117,6 +152,8 @@ class Wintersky {
 		this.tick_values = {};
 		this.creation_variables = {};
 		this.creation_values = {};
+
+		this.updateMaterial();
 	}
 	params() {
 		var obj = {
@@ -156,9 +193,7 @@ class Wintersky {
 				)
 			}
 		} else if (datatype == 'color') {
-			var val = (this.value && this.value.hsl) ? this.value.hex : this.value;
-			var c = tinycolor(val).toHex();
-			data = new THREE.Color('#'+c)
+			
 		} else {
 			data = getV(input)
 		}
@@ -167,58 +202,29 @@ class Wintersky {
 	updateMaterial() {
 		var scope = this;
 		var url;
-		var path = this.config.particle_texture_inputs.path;
-		if (this.config.particle_texture_inputs.image.image) {
-			url = this.config.particle_texture_inputs.image.image.data;
-		} else {
-			if (path == 'textures/particle/particles') {
-				url = 'assets/default_particles.png';
-	
-			} else if (path == 'textures/flame_atlas' || path == 'textures/particle/flame_atlas') {
-				url = 'assets/flame_atlas.png';
-	
-			} else if (path == 'textures/particle/campfire_smoke') {
-				url = 'assets/campfire_smoke.png';
-			} else {
-				url = 'assets/missing.png';
-			}
+		var path = this.config.particle_texture_path;
+
+		switch (path) {
+			case 'textures/particle/particles':
+				url = ParticlesTex;
+				break;
+			case 'textures/flame_atlas': case 'textures/particle/flame_atlas':
+				url = FlameAtlasTex;
+				break;
+			case 'textures/particle/soul':
+				url = SoulTex;
+				break;
+			case 'textures/particle/campfire_smoke':
+				url = CampfireSmokeTex;
+				break;
+			default:
+				url = MissingTex;
+				break;
 		}
 		var tex = new THREE.TextureLoader().load(url, function(a, b) {
-			/*
-			function factorize(input, axis, factor) {
-				if (!input.value || !input.value[axis]) return;
-				var arr = input.value.slice()
-				var val = arr[axis]
-				if (isNaN(val)) {
-					arr[axis] = `${factor} * (${val})`
-				} else {
-					arr[axis] = factor * parseFloat(val);
-				}
-				input.value = arr;
-			}*/
-	
-			tex.magFilter = THREE.NearestFilter
-			tex.minFilter = THREE.NearestFilter
-			scope.material.map = tex
-			/*
-			var x_factor = System.material.map.image.naturalWidth / this.this.config.particle_texture_width;
-			var y_factor = System.material.map.image.naturalHeight / this.this.config.particle_texture_height;
-
-			if (x_factor && x_factor != 1) {
-				factorize(this.config.particle_texture_inputs.uv, 0, x_factor)
-				factorize(this.config.particle_texture_inputs.uv_size, 0, x_factor)
-				factorize(this.config.particle_texture_inputs.uv_step, 0, x_factor)
-			}
-			if (y_factor && y_factor != 1) {
-				factorize(this.config.particle_texture_inputs.uv, 1, y_factor)
-				factorize(this.config.particle_texture_inputs.uv_size, 1, y_factor)
-				factorize(this.config.particle_texture_inputs.uv_step, 1, y_factor)
-			}*/
-			this.this.config.particle_texture_width = scope.material.map.image.naturalWidth;
-			this.this.config.particle_texture_height = scope.material.map.image.naturalHeight;
-			if (typeof cb === 'function') {
-				cb()
-			}
+			tex.magFilter = THREE.NearestFilter;
+			tex.minFilter = THREE.NearestFilter;
+			scope.material.map = tex;
 		})
 	}
 	start() {
@@ -233,10 +239,13 @@ class Wintersky {
 		this.sleep_time = this.calculate(this.config.emitter_lifetime_sleep_time, params)
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
 		this.creation_values = {};
-		for (var key in this.creation_variables) {
-			var s = this.creation_variables[key];
-			this.creation_values[key] = this.Molang.parse(s)
+
+		for (var line of this.config.variables_creation_vars) {
+			let [key, value] = line.split(/\s*=(.+)/);
+			value = value.replace(/^\s*=\s*/, '');
+			this.creation_values[key] = this.Molang.parse(value)
 		}
+
 		if (this.config.emitter_rate_mode === 'instant') {
 			this.spawnParticles(this.calculate(this.config.emitter_rate_amount, params))
 		}
@@ -245,10 +254,13 @@ class Wintersky {
 	tick() {
 		var params = this.params()
 		this.tick_values = {};
-		for (var key in this.tick_variables) {
-			var s = this.tick_variables[key];
-			this.tick_values[key] = this.Molang.parse(s, params)
+
+		for (var line of this.config.variables_tick_vars) {
+			let [key, value] = line.split(/\s*=(.+)/);
+			value = value.replace(/^\s*=\s*/, '');
+			this.tick_values[key] = this.Molang.parse(value)
 		}
+
 		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
 			var p_this_tick = this.calculate(this.config.emitter_rate_rate, params)/30
 			var x = 1/p_this_tick;
@@ -412,7 +424,7 @@ Wintersky.Particle = class {
 
 		//Init Position:
 		var surface = this.emitter.config.emitter_shape_surface_only;
-		if (this.emitter.shape === 'box') {
+		if (this.emitter.config.emitter_shape_mode === 'box') {
 			var size = this.emitter.calculate(this.emitter.config.emitter_shape_half_dimensions, params);
 
 			this.position.x = MathUtil.randomab(-size.x, size.x);
@@ -424,7 +436,7 @@ Wintersky.Particle = class {
 				var side = Math.floor(MathUtil.randomab(0, 2))
 				this.position.setComponent(face, size.getComponent(face) * (side?1:-1))
 			}
-		} else if (this.emitter.shape === 'entity_aabb') {
+		} else if (this.emitter.config.emitter_shape_mode === 'entity_aabb') {
 			var size = new THREE.Vector3(0.5, 1, 0.5);
 
 			this.position.x = MathUtil.randomab(-size.x, size.x);
@@ -436,7 +448,7 @@ Wintersky.Particle = class {
 				var side = Math.floor(MathUtil.randomab(0, 2))
 				this.position.setComponent(face, size.getComponent(face) * (side?1:-1))
 			}
-		} else if (this.emitter.shape === 'sphere') {
+		} else if (this.emitter.config.emitter_shape_mode === 'sphere') {
 
 			var radius = this.emitter.calculate(this.emitter.config.emitter_shape_radius, params)
 			if (surface) {
@@ -444,8 +456,8 @@ Wintersky.Particle = class {
 			} else {
 				this.position.x = radius * Math.random()
 			}
-			this.position.applyEuler(THREE.getRandomEuler())
-		} else if (this.emitter.shape === 'disc') {
+			this.position.applyEuler(getRandomEuler())
+		} else if (this.emitter.config.emitter_shape_mode === 'disc') {
 			var radius = this.emitter.calculate(this.emitter.config.emitter_shape_radius, params)
 			var ang = Math.random()*Math.PI*2
 			var dis = surface ? radius : radius * Math.sqrt(Math.random())
@@ -465,8 +477,8 @@ Wintersky.Particle = class {
 		var dir = this.emitter.config.particle_direction_mode;
 		if (dir == 'inwards' || dir == 'outwards') {
 
-			if (this.emitter.shape === 'point') {
-				this.speed.set(1, 0, 0).applyEuler(THREE.getRandomEuler())
+			if (this.emitter.config.emitter_shape_mode === 'point') {
+				this.speed.set(1, 0, 0).applyEuler(getRandomEuler())
 			} else {
 				this.speed.copy(this.position).normalize()
 				if (dir == 'inwards') {
@@ -527,7 +539,6 @@ Wintersky.Particle = class {
 
 		//Size
 		var size = this.emitter.calculate(this.emitter.config.particle_appearance_size, params);
-		//console.log(this.emitter.config.particle_appearance_size, size)
 		this.mesh.scale.x = size.x*2.25 || 0.0001;
 		this.mesh.scale.y = size.y*2.25 || 0.0001;
 
@@ -559,6 +570,16 @@ Wintersky.Particle = class {
 			this.material.color.r = c.x;
 			this.material.color.g = c.y;
 			this.material.color.b = c.z;
+
+		} else if (this.emitter.config.particle_color_mode === 'gradient') {
+			var i = this.emitter.calculate(this.emitter.config.particle_color_interpolant, params)
+			var r = this.emitter.calculate(this.emitter.config.particle_color_range, params)
+			var c = calculateGradient(this.emitter.config.particle_color_gradient, (i/r) * 100)
+
+			this.setColor(c.r, c.g, c.b);
+		} else {
+			var c = tinycolor(this.emitter.config.particle_color_static).toRgb();
+			this.setColor(c.r/255, c.g/255, c.b/255);
 		}
 
 		return this;
@@ -569,6 +590,12 @@ Wintersky.Particle = class {
 		this.emitter.dead_particles.push(this)
 		return this;
 	}
+	setColor(r, g, b) {
+		this.mesh.geometry.faces.forEach(face => {
+			face.color.setRGB(r, g, b)
+		})
+		this.mesh.geometry.colorsNeedUpdate = true;
+	}
 	setFrame(n) {
 		var params = this.params()
 		var uv = this.emitter.calculate(this.emitter.config.particle_texture_uv, params)
@@ -577,7 +604,7 @@ Wintersky.Particle = class {
 			var offset = this.emitter.calculate(this.emitter.config.particle_texture_uv_step, params)
 			uv.addScaledVector(offset, n)
 		}
-		this.setUV(uv.x, uv.y, size.x||this.emitter.config.particle_texture_width, this.emitter.config.particle_texture_height||this.emitter.config.particle_texture_height)
+		this.setUV(uv.x, uv.y, size.x||this.emitter.config.particle_texture_width, size.y||this.emitter.config.particle_texture_height)
 	}
 	setUV(x, y, w, h) {
 		var epsilon = 0.05

@@ -30,7 +30,7 @@ async function initializeApp() {
 	// Initialize Particles
 	let content = await new Promise((resolve, reject) => {
 		var xhr = new XMLHttpRequest();
-		xhr.open('GET', '../examples/rainbow.particle.json', true);
+		xhr.open('GET', '../examples/loading.particle.json', true);
 		xhr.responseType = 'json';
 		xhr.onload = function() {
 			var status = xhr.status;
@@ -47,7 +47,7 @@ async function initializeApp() {
 	View.wintersky.start()
 
 	setInterval(function() {
-		View.wintersky.tick()
+		if (!View.wintersky.paused) View.wintersky.tick()
 	}, 1000/30)
 }
 

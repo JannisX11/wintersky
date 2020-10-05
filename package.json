@@ -4,7 +4,8 @@
   "description": "Particle emitter for Minecraft bedrock particle effects",
   "main": "src/wintersky.js",
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "watch": "rollup -c --watch"
   },
   "repository": {
     "type": "git",
@@ -17,12 +18,14 @@
   },
   "homepage": "https://github.com/JannisX11/wintersky#readme",
   "devDependencies": {
+    "@rollup/plugin-image": "^2.0.5",
     "browserify": "^16.5.2",
     "rollup": "^2.28.2",
     "rollup-plugin-node-resolve": "^5.2.0"
   },
   "dependencies": {
     "molangjs": "^1.2.0",
-    "three": "^0.121.1"
+    "three": "^0.121.1",
+    "tinycolor2": "^1.4.2"
   }
 }
