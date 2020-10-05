@@ -1,36 +1,18 @@
 import Molang from 'molangjs';
 import THREE from 'three';
-import tinycolor from 'tinycolor2'
+import tinycolor from 'tinycolor2';
 
 import Config from './config';
+import MathUtil from './mathutil';
 
-import MissingTex from '../assets/missing.png'
-import ParticlesTex from '../assets/particles.png'
-import FlameAtlasTex from '../assets/flame_atlas.png'
-import SoulTex from '../assets/soul.png'
-import CampfireSmokeTex from '../assets/campfire_smoke.png'
+import MissingTex from '../assets/missing.png';
+import ParticlesTex from '../assets/particles.png';
+import FlameAtlasTex from '../assets/flame_atlas.png';
+import SoulTex from '../assets/soul.png';
+import CampfireSmokeTex from '../assets/campfire_smoke.png';
 
 
-const MathUtil = {
-	roundTo(num, digits) {
-		var d = Math.pow(10,digits)
-		return Math.round(num * d) / d
-	},
-	randomab(a, b) {
-		return a + Math.random() * (b-a)
-	},
-	radToDeg(rad) {
-		return rad / Math.PI * 180
-	},
-	degToRad(deg) {
-		return Math.PI / (180 /deg)
-	},
-	clamp(number, min, max) {
-		if (number > max) number = max;
-		if (number < min || isNaN(number)) number = min;
-		return number;
-	}
-}
+
 function removeFromArray(array, item) {
 	let index = array.indexOf(item);
 	if (index >= 0) {
@@ -113,16 +95,21 @@ function calculateGradient(gradient, percent) {
 	}
 	return new THREE.Color(color);
 }
-function getRandomEuler() {
-	return new THREE.Euler(
-		MathUtil.randomab(-Math.PI, Math.PI),
-		MathUtil.randomab(-Math.PI, Math.PI),
-		MathUtil.randomab(-Math.PI, Math.PI)
-	)
-}
 
+const Wintersky = {
+	Config,
+	emitters: [],
+	updateFacingRotation(camera) {
+		Wintersky.emitters.forEach(emitter => {
+			emitter.updateFacingRotation(camera);
+		});
+	},
+	global_config: {
+		max_emitter_particles: 30000
+	}
+};
 
-class Wintersky {
+Wintersky.Emitter = class {
 	constructor(config) {
 		Wintersky.emitters.push(this);
 
@@ -159,7 +146,7 @@ class Wintersky {
 		var obj = {
 			"variable.entity_scale": 1
 		};
-		obj["variable.emitter_lifetime"] = this.lifetime;
+		obj["variable.emitter_lifetime"] = this.active_time;
 		obj["variable.emitter_age"] = this.age;
 		obj["variable.emitter_random_1"] = this.random_vars[0];
 		obj["variable.emitter_random_2"] = this.random_vars[1];
@@ -173,7 +160,13 @@ class Wintersky {
 		var data;
 	
 		if (input instanceof Array) {
-			if (input.length === 4) {
+			if (datatype == 'array') {
+				data = [];
+				input.forEach(source => {
+					data.push(getV(source));
+				})
+
+			} else if (input.length === 4) {
 				data = new THREE.Plane().setComponents(
 					getV(input[0]),
 					getV(input[1]),
@@ -278,20 +271,22 @@ class Wintersky {
 
 		this.age += 1/30;
 		var age = MathUtil.roundTo(this.age, 5);
-		if (this.mode == 'looping') {
+
+		
+		if (this.config.emitter_lifetime_mode == 'looping') {
 			//Looping
-			if (this.enabled && age >= this.active_time) {
+			if (this.enabled && MathUtil.roundTo(this.age, 5) >= this.active_time) {
 				this.stop()
 			}
-			if (!this.enabled && age >= this.sleep_time) {
+			if (!this.enabled && MathUtil.roundTo(this.age, 5) >= this.sleep_time) {
 				this.start()
 			}
-		} else if (this.mode == 'once') {
+		} else if (this.config.emitter_lifetime_mode == 'once') {
 			//Once
-			if (this.enabled && age >= this.active_time) {
+			if (this.enabled && MathUtil.roundTo(this.age, 5) >= this.active_time) {
 				this.stop()
 			}
-		} else if (this.mode === 'expression') {
+		} else if (this.config.emitter_lifetime_mode === 'expression') {
 			//Expressions
 			if (this.enabled && this.calculate(this.config.emitter_lifetime_expiration, params)) {
 				this.stop()
@@ -367,15 +362,6 @@ class Wintersky {
 		}
 		return count;
 	}
-}
-Wintersky.emitters = [];
-Wintersky.updateFacingRotation = function(camera) {
-	Wintersky.emitters.forEach(emitter => {
-		emitter.updateFacingRotation(camera);
-	});
-}
-Wintersky.global_config = {
-	max_emitter_particles: 10000
 }
 
 Wintersky.Particle = class {
@@ -456,7 +442,7 @@ Wintersky.Particle = class {
 			} else {
 				this.position.x = radius * Math.random()
 			}
-			this.position.applyEuler(getRandomEuler())
+			this.position.applyEuler(MathUtil.getRandomEuler())
 		} else if (this.emitter.config.emitter_shape_mode === 'disc') {
 			var radius = this.emitter.calculate(this.emitter.config.emitter_shape_radius, params)
 			var ang = Math.random()*Math.PI*2
@@ -472,13 +458,12 @@ Wintersky.Particle = class {
 			}
 		}
 		//Speed
-			//this.speed = this.emitter.calculate(this.emitter.config.particle_motion_direction_speed, params);
 		this.speed = new THREE.Vector3()
 		var dir = this.emitter.config.particle_direction_mode;
 		if (dir == 'inwards' || dir == 'outwards') {
 
 			if (this.emitter.config.emitter_shape_mode === 'point') {
-				this.speed.set(1, 0, 0).applyEuler(getRandomEuler())
+				this.speed.set(1, 0, 0).applyEuler(MathUtil.getRandomEuler())
 			} else {
 				this.speed.copy(this.position).normalize()
 				if (dir == 'inwards') {
@@ -562,21 +547,21 @@ Wintersky.Particle = class {
 					this.setFrame(this.current_frame);
 				}
 			}
+		} else {
+			this.setFrame(0);
 		}
 
 		//Color (ToDo)
 		if (this.emitter.config.particle_color_mode === 'expression') {
-			var c = this.emitter.calculate(this.emitter.config.particle_color_expression, params)
-			this.material.color.r = c.x;
-			this.material.color.g = c.y;
-			this.material.color.b = c.z;
+			var c = this.emitter.calculate(this.emitter.config.particle_color_expression, params, 'array')
+			this.setColor(...c);
 
 		} else if (this.emitter.config.particle_color_mode === 'gradient') {
 			var i = this.emitter.calculate(this.emitter.config.particle_color_interpolant, params)
 			var r = this.emitter.calculate(this.emitter.config.particle_color_range, params)
 			var c = calculateGradient(this.emitter.config.particle_color_gradient, (i/r) * 100)
-
 			this.setColor(c.r, c.g, c.b);
+
 		} else {
 			var c = tinycolor(this.emitter.config.particle_color_static).toRgb();
 			this.setColor(c.r/255, c.g/255, c.b/255);

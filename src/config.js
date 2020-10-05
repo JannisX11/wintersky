@@ -77,7 +77,7 @@ class Config {
 		this.particle_color_interpolant = '';
 		this.particle_color_range = 0;
 		this.particle_color_gradient = [];
-		this.particle_color_expression = '';
+		this.particle_color_expression = [];
 		this.particle_color_light = false;
 		this.particle_collision_enabled = false;
 		this.particle_collision_collision_drag = 0;
@@ -98,6 +98,7 @@ class Config {
 			this[key] = val;
 		} else if (typeof this[key] == 'boolean') {
 			this[key] = !!val;
+			
 		}
 	}
 	setFromJSON(data) {
@@ -148,8 +149,8 @@ class Config {
 				}
 			}
 			if (comp('emitter_local_space')) {
-				this.space_inputs_local_position = comp('emitter_local_space').position;
-				this.space_inputs_local_rotation = comp('emitter_local_space').rotation;
+				this.space_local_position = comp('emitter_local_space').position;
+				this.space_local_rotation = comp('emitter_local_space').rotation;
 			}
 			if (comp('emitter_rate_steady')) {
 				this.set('emitter_rate_mode',  'steady');
