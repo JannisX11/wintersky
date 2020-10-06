@@ -26,23 +26,6 @@ const Normals = {
 	n: new THREE.Vector3(0, 0, 0),
 }
 
-
-/*
-const Wintersky = {
-	renderLoop: setInverval(function() {
-		if (Emitter && document.hasFocus() && !Wintersky.paused) {
-			Emitter.tick()
-		}
-	}, 1000/30),
-	paused: false,
-	emitters: [],
-	renderUpdate() {
-		this.emitters.forEach(emitter => {
-			emitter.tickParticleRotation();
-		})
-	}
-};
-*/
 function calculateCurve(emitter, curve, params) {
 
 	var position = emitter.Molang.parse(curve.input, params);
@@ -96,16 +79,28 @@ function calculateGradient(gradient, percent) {
 	return new THREE.Color(color);
 }
 
+let global_scale = 1;
 const Wintersky = {
 	Config,
 	emitters: [],
+	space: new THREE.Object3D(),
 	updateFacingRotation(camera) {
 		Wintersky.emitters.forEach(emitter => {
 			emitter.updateFacingRotation(camera);
 		});
 	},
 	global_config: {
-		max_emitter_particles: 30000
+		max_emitter_particles: 30000,
+		get scale() {
+			return global_scale;
+		},
+		set scale(val) {
+			global_scale = val;
+			Wintersky.emitters.forEach(emitter => {
+				emitter.space.scale.set(val, val, val);
+			})
+			Wintersky.space.scale.set(val, val, val);
+		}
 	}
 };
 
@@ -120,7 +115,8 @@ Wintersky.Emitter = class {
 				|| (this.config.curves[key] && calculateCurve(this, this.config.curves[key], params))
 		}
 
-		this.group = new THREE.Object3D();
+		this.space = new THREE.Object3D();
+		this.space.scale.set(global_scale, global_scale, global_scale);
 		this.material = new THREE.MeshBasicMaterial({
 			color: 0xffffff,
 			transparent: true,
@@ -133,7 +129,7 @@ Wintersky.Emitter = class {
 		this.dead_particles = [];
 		this.age = 0;
 		this.enabled = false;
-		this.mode = 'looping';
+		this.loop_mode = 'auto';// looping, once 
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
 		this.tick_variables = {};
 		this.tick_values = {};
@@ -141,6 +137,11 @@ Wintersky.Emitter = class {
 		this.creation_values = {};
 
 		this.updateMaterial();
+	}
+	clone() {
+		let clone = new Wintersky.Emitter(this.config);
+		clone.loop_mode = this.loop_mode;
+		return clone;
 	}
 	params() {
 		var obj = {
@@ -221,10 +222,6 @@ Wintersky.Emitter = class {
 		})
 	}
 	start() {
-		/*
-		for (var i = this.particles.length-1; i >= 0; i--) {
-			this.particles[i].remove()
-		}*/
 		this.age = 0;
 		this.enabled = true;
 		var params = this.params()
@@ -244,7 +241,7 @@ Wintersky.Emitter = class {
 		}
 		return this;
 	}
-	tick() {
+	tick(jump) {
 		var params = this.params()
 		this.tick_values = {};
 
@@ -266,14 +263,20 @@ Wintersky.Emitter = class {
 			this.spawnParticles(p_this_tick)
 		}
 		this.particles.forEach(p => {
-			p.tick()
+			p.tick(jump)
 		})
 
 		this.age += 1/30;
-		var age = MathUtil.roundTo(this.age, 5);
 
-		
-		if (this.config.emitter_lifetime_mode == 'looping') {
+		if (this.config.emitter_lifetime_mode === 'expression') {
+			//Expressions
+			if (this.enabled && this.calculate(this.config.emitter_lifetime_expiration, params)) {
+				this.stop();
+			}
+			if (!this.enabled && this.calculate(this.config.emitter_lifetime_activation, params)) {
+				this.start()
+			}
+		} else if (this.loop_mode == 'looping' || (this.loop_mode == 'auto' && this.config.emitter_lifetime_mode == 'looping')) {
 			//Looping
 			if (this.enabled && MathUtil.roundTo(this.age, 5) >= this.active_time) {
 				this.stop()
@@ -281,32 +284,28 @@ Wintersky.Emitter = class {
 			if (!this.enabled && MathUtil.roundTo(this.age, 5) >= this.sleep_time) {
 				this.start()
 			}
-		} else if (this.config.emitter_lifetime_mode == 'once') {
+		} else {
 			//Once
 			if (this.enabled && MathUtil.roundTo(this.age, 5) >= this.active_time) {
 				this.stop()
-			}
-		} else if (this.config.emitter_lifetime_mode === 'expression') {
-			//Expressions
-			if (this.enabled && this.calculate(this.config.emitter_lifetime_expiration, params)) {
-				this.stop()
-			}
-			if (!this.enabled && this.calculate(this.config.emitter_lifetime_activation, params)) {
-				this.start()
 			}
 		}
 		return this;
 	}
 	jumpTo(second) {
 		let old_time = Math.round(this.age*30)
-		let new_time = Math.round(second*30)
+		let new_time = Math.clamp(Math.round(second*30), 0, Math.round(this.active_time*30)-1)
 		if (old_time == new_time) return;
 		if (new_time < old_time) {
 			this.stop().start();
+			this.particles.slice().forEach(particle => {
+				particle.remove();
+			})
 		}
-		while (Math.round(this.age*30) < new_time) {
-			this.tick();
+		while (Math.round(this.age*30) < new_time-1) {
+			this.tick(true);
 		}
+		this.tick(false);
 		return this;
 	}
 	updateFacingRotation(camera) {
@@ -392,7 +391,11 @@ Wintersky.Particle = class {
 	add() {
 		if (!this.emitter.particles.includes(this)) {
 			this.emitter.particles.push(this);
-			this.emitter.group.add(this.mesh)
+			if (this.emitter.config.space_local_position) {
+				this.emitter.space.add(this.mesh);
+			} else {
+				Wintersky.space.add(this.mesh);
+			}
 		}
 
 		this.age = this.loop_time = 0;
@@ -485,7 +488,7 @@ Wintersky.Particle = class {
 
 		return this.tick();
 	}
-	tick() {
+	tick(jump) {
 		var params = this.params()
 
 		//Lifetime
@@ -515,64 +518,67 @@ Wintersky.Particle = class {
 				rot_acceleration += -rot_drag * this.rotation_rate;
 			this.rotation_rate += rot_acceleration*1/30;
 			this.rotation = MathUtil.degToRad(this.initial_rotation + this.rotation_rate*this.age);
-		} else {
+		} else if (!jump) {
 			if (this.emitter.config.particle_motion_relative_position.join('').length) {
 				this.position.copy(this.emitter.calculate(this.emitter.config.particle_motion_relative_position, params));
 			}
 			this.rotation = MathUtil.degToRad(this.emitter.calculate(this.emitter.config.particle_rotation_rotation, params));
 		}
 
-		//Size
-		var size = this.emitter.calculate(this.emitter.config.particle_appearance_size, params);
-		this.mesh.scale.x = size.x*2.25 || 0.0001;
-		this.mesh.scale.y = size.y*2.25 || 0.0001;
+		if (!jump) {
+			//Size
+			var size = this.emitter.calculate(this.emitter.config.particle_appearance_size, params);
+			this.mesh.scale.x = size.x*2.25 || 0.0001;
+			this.mesh.scale.y = size.y*2.25 || 0.0001;
 
-		//UV
-		if (this.emitter.config.particle_texture_mode === 'animated') {
-			var max_frame = this.emitter.calculate(this.emitter.config.particle_texture_max_frame, params);
-			if (this.emitter.config.particle_texture_stretch_to_lifetime && max_frame) {
-				var fps = max_frame/this.lifetime;
-			} else {
-				var fps = this.emitter.calculate(this.emitter.config.particle_texture_frames_per_second, params);
-			}
-			if (Math.floor(this.loop_time*fps) > this.current_frame) {
-				this.current_frame = Math.floor(this.loop_time*fps);
-				if (max_frame && this.current_frame > max_frame) {
-					if (this.emitter.config.particle_texture_loop) {
-						this.current_frame = 0;
-						this.loop_time = 0;
+
+			//UV
+			if (this.emitter.config.particle_texture_mode === 'animated') {
+				var max_frame = this.emitter.calculate(this.emitter.config.particle_texture_max_frame, params);
+				if (this.emitter.config.particle_texture_stretch_to_lifetime && max_frame) {
+					var fps = max_frame/this.lifetime;
+				} else {
+					var fps = this.emitter.calculate(this.emitter.config.particle_texture_frames_per_second, params);
+				}
+				if (Math.floor(this.loop_time*fps) > this.current_frame) {
+					this.current_frame = Math.floor(this.loop_time*fps);
+					if (max_frame && this.current_frame > max_frame) {
+						if (this.emitter.config.particle_texture_loop) {
+							this.current_frame = 0;
+							this.loop_time = 0;
+							this.setFrame(this.current_frame);
+						}
+					} else {
 						this.setFrame(this.current_frame);
 					}
-				} else {
-					this.setFrame(this.current_frame);
 				}
+			} else {
+				this.setFrame(0);
 			}
-		} else {
-			this.setFrame(0);
-		}
 
-		//Color (ToDo)
-		if (this.emitter.config.particle_color_mode === 'expression') {
-			var c = this.emitter.calculate(this.emitter.config.particle_color_expression, params, 'array')
-			this.setColor(...c);
+			//Color (ToDo)
+			if (this.emitter.config.particle_color_mode === 'expression') {
+				var c = this.emitter.calculate(this.emitter.config.particle_color_expression, params, 'array')
+				this.setColor(...c);
 
-		} else if (this.emitter.config.particle_color_mode === 'gradient') {
-			var i = this.emitter.calculate(this.emitter.config.particle_color_interpolant, params)
-			var r = this.emitter.calculate(this.emitter.config.particle_color_range, params)
-			var c = calculateGradient(this.emitter.config.particle_color_gradient, (i/r) * 100)
-			this.setColor(c.r, c.g, c.b);
+			} else if (this.emitter.config.particle_color_mode === 'gradient') {
+				var i = this.emitter.calculate(this.emitter.config.particle_color_interpolant, params)
+				var r = this.emitter.calculate(this.emitter.config.particle_color_range, params)
+				var c = calculateGradient(this.emitter.config.particle_color_gradient, (i/r) * 100)
+				this.setColor(c.r, c.g, c.b);
 
-		} else {
-			var c = tinycolor(this.emitter.config.particle_color_static).toRgb();
-			this.setColor(c.r/255, c.g/255, c.b/255);
+			} else {
+				var c = tinycolor(this.emitter.config.particle_color_static).toRgb();
+				this.setColor(c.r/255, c.g/255, c.b/255);
+			}
 		}
 
 		return this;
 	}
 	remove() {
-		removeFromArray(this.emitter.particles, this)
-		this.emitter.group.remove(this.mesh)
-		this.emitter.dead_particles.push(this)
+		removeFromArray(this.emitter.particles, this);
+		if (this.mesh.parent) this.mesh.parent.remove(this.mesh);
+		this.emitter.dead_particles.push(this);
 		return this;
 	}
 	setColor(r, g, b) {
