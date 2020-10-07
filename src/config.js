@@ -5,7 +5,7 @@ function parseColor(input) {
 }
 
 class Config {
-	constructor(config) {
+	constructor(config, options = 0) {
 		this.reset()
 
 		if (config && config.particle_effect) {
@@ -13,9 +13,11 @@ class Config {
 		} else if (typeof config == 'object') {
 			Object.assign(this, config);
 		}
+		if (options.path) this.set('file_path', options.path);
 	}
 	reset() {
 		this.identifier = '';
+		this.file_path = '';
 		this.curves = {};
 		this.space_local_position = false;
 		this.space_local_rotation = false;

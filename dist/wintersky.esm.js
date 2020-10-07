@@ -7,7 +7,7 @@ function parseColor(input) {
 }
 
 class Config {
-	constructor(config) {
+	constructor(config, options = 0) {
 		this.reset();
 
 		if (config && config.particle_effect) {
@@ -15,9 +15,11 @@ class Config {
 		} else if (typeof config == 'object') {
 			Object.assign(this, config);
 		}
+		if (options.path) this.set('file_path', options.path);
 	}
 	reset() {
 		this.identifier = '';
+		this.file_path = '';
 		this.curves = {};
 		this.space_local_position = false;
 		this.space_local_rotation = false;
@@ -473,8 +475,10 @@ const Wintersky = {
 			emitter.updateFacingRotation(camera);
 		});
 	},
-	global_config: {
+	global_options: {
 		max_emitter_particles: 30000,
+		tick_rate: 30,
+		loop_mode: 'auto', // looping, once 
 		get scale() {
 			return global_scale;
 		},
@@ -489,7 +493,7 @@ const Wintersky = {
 };
 
 Wintersky.Emitter = class {
-	constructor(config) {
+	constructor(config, options = 0) {
 		Wintersky.emitters.push(this);
 
 		this.Molang = new Molang();
@@ -507,13 +511,13 @@ Wintersky.Emitter = class {
 			vertexColors: THREE.FaceColors,
 			alphaTest: 0.2
 		});
-		this.config = config instanceof Config ? config : new Config(config);
+		this.config = config instanceof Config ? config : new Config(config, options);
 
 		this.particles = [];
 		this.dead_particles = [];
 		this.age = 0;
 		this.enabled = false;
-		this.loop_mode = 'auto';// looping, once 
+		this.loop_mode = options.loop_mode || Wintersky.global_options.loop_mode;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()];
 		this.tick_variables = {};
 		this.tick_values = {};
@@ -597,6 +601,10 @@ Wintersky.Emitter = class {
 				url = img;
 				break;
 		}
+		if (url == img && typeof Wintersky.fetchTexture == 'function') {
+			let result = Wintersky.fetchTexture(this.config);
+			if (result) url = result;
+		}
 		var tex = new THREE.TextureLoader().load(url, function(a, b) {
 			tex.magFilter = THREE.NearestFilter;
 			tex.minFilter = THREE.NearestFilter;
@@ -624,7 +632,8 @@ Wintersky.Emitter = class {
 		return this;
 	}
 	tick(jump) {
-		var params = this.params();
+		let params = this.params();
+		let {tick_rate} = Wintersky.global_options;
 		this.tick_values = {};
 
 		for (var line of this.config.variables_tick_vars) {
@@ -634,9 +643,9 @@ Wintersky.Emitter = class {
 		}
 
 		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
-			var p_this_tick = this.calculate(this.config.emitter_rate_rate, params)/30;
+			var p_this_tick = this.calculate(this.config.emitter_rate_rate, params)/tick_rate;
 			var x = 1/p_this_tick;
-			var c_f = Math.round(this.age*30);
+			var c_f = Math.round(this.age*tick_rate);
 			if (c_f % Math.round(x) == 0) {
 				p_this_tick = Math.ceil(p_this_tick);
 			} else {
@@ -648,7 +657,7 @@ Wintersky.Emitter = class {
 			p.tick(jump);
 		});
 
-		this.age += 1/30;
+		this.age += 1/tick_rate;
 
 		if (this.config.emitter_lifetime_mode === 'expression') {
 			//Expressions
@@ -675,8 +684,12 @@ Wintersky.Emitter = class {
 		return this;
 	}
 	jumpTo(second) {
-		let old_time = Math.round(this.age*30);
-		let new_time = Math.clamp(Math.round(second*30), 0, Math.round(this.active_time*30)-1);
+		let {tick_rate} = Wintersky.global_options;
+		let old_time = Math.round(this.age * tick_rate);
+		let new_time = Math.round(second * tick_rate);
+		if (this.loop_mode != 'once') {
+			new_time = Math.clamp(new_time, 0, Math.round(this.active_time * tick_rate) - 1);
+		}
 		if (old_time == new_time) return;
 		if (new_time < old_time) {
 			this.stop().start();
@@ -684,7 +697,7 @@ Wintersky.Emitter = class {
 				particle.remove();
 			});
 		}
-		while (Math.round(this.age*30) < new_time-1) {
+		while (Math.round(this.age * tick_rate) < new_time-1) {
 			this.tick(true);
 		}
 		this.tick(false);
@@ -728,10 +741,10 @@ Wintersky.Emitter = class {
 
 		if (this.config.emitter_rate_mode == 'steady') {
 			var max = this.calculate(this.config.emitter_rate_maximum, this.params())||0;
-			max = MathUtil.clamp(max, 0, Wintersky.global_config.max_emitter_particles);
+			max = MathUtil.clamp(max, 0, Wintersky.global_options.max_emitter_particles);
 			count = MathUtil.clamp(count, 0, max-this.particles.length);
 		} else {
-			count = MathUtil.clamp(count, 0, Wintersky.global_config.max_emitter_particles-this.particles.length);
+			count = MathUtil.clamp(count, 0, Wintersky.global_options.max_emitter_particles-this.particles.length);
 		}
 		for (var i = 0; i < count; i++) {
 			if (this.dead_particles.length) {
@@ -742,6 +755,10 @@ Wintersky.Emitter = class {
 			p.add();
 		}
 		return count;
+	}
+	delete() {
+		if (this.space.parent) this.space.parent.remove(this.space);
+		removeFromArray(Wintersky.emitters, this);
 	}
 };
 
@@ -864,6 +881,16 @@ Wintersky.Particle = class {
 		this.speed.z *= speed;
 
 		this.position.add(this.emitter.calculate(this.emitter.config.emitter_shape_offset, params));
+		
+		if (this.emitter.space.parent) {
+			if (!this.emitter.config.space_local_rotation) {
+				this.position.applyQuaternion(this.emitter.space.getWorldQuaternion(new THREE.Quaternion()));
+			}
+			if (!this.emitter.config.space_local_position) {
+				let offset = this.emitter.space.getWorldPosition(new THREE.Vector3());
+				this.position.addScaledVector(offset, 1/global_scale);
+			}
+		}
 
 		//UV
 		this.setFrame(0);
@@ -872,10 +899,11 @@ Wintersky.Particle = class {
 	}
 	tick(jump) {
 		var params = this.params();
+		let {tick_rate} = Wintersky.global_options;
 
 		//Lifetime
-		this.age += 1/30;
-		this.loop_time += 1/30;
+		this.age += 1/tick_rate;
+		this.loop_time += 1/tick_rate;
 		if (this.emitter.config.particle_lifetime_mode === 'time') {
 			if (this.age > this.lifetime) {
 				this.remove();
@@ -891,14 +919,14 @@ Wintersky.Particle = class {
 			var drag = this.emitter.calculate(this.emitter.config.particle_motion_linear_drag_coefficient, params);
 			this.acceleration = this.emitter.calculate(this.emitter.config.particle_motion_linear_acceleration, params);
 			this.acceleration.addScaledVector(this.speed, -drag);
-			this.speed.addScaledVector(this.acceleration, 1/30);
-			this.position.addScaledVector(this.speed, 1/30);
+			this.speed.addScaledVector(this.acceleration, 1/tick_rate);
+			this.position.addScaledVector(this.speed, 1/tick_rate);
 
 			//Rotation
 			var rot_drag = this.emitter.calculate(this.emitter.config.particle_rotation_rotation_drag_coefficient, params);
 			var rot_acceleration = this.emitter.calculate(this.emitter.config.particle_rotation_rotation_acceleration, params);
 				rot_acceleration += -rot_drag * this.rotation_rate;
-			this.rotation_rate += rot_acceleration*1/30;
+			this.rotation_rate += rot_acceleration*1/tick_rate;
 			this.rotation = MathUtil.degToRad(this.initial_rotation + this.rotation_rate*this.age);
 		} else if (!jump) {
 			if (this.emitter.config.particle_motion_relative_position.join('').length) {
