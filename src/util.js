@@ -31,4 +31,25 @@ const MathUtil = {
 		)
 	}
 }
-export default MathUtil;
+
+const Normals = {
+	x: new THREE.Vector3(1, 0, 0),
+	y: new THREE.Vector3(0, 1, 0),
+	z: new THREE.Vector3(0, 0, 1),
+	n: new THREE.Vector3(0, 0, 0),
+}
+
+function removeFromArray(array, item) {
+	let index = array.indexOf(item);
+	if (index >= 0) {
+		array.splice(index, 1);
+	}
+}
+
+
+
+export {
+	MathUtil,
+	Normals,
+	removeFromArray
+};

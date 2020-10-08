@@ -1,7 +1,7 @@
 import image from '@rollup/plugin-image';
 
 export default {
-	input: 'src/wintersky.js',
+	input: 'src/entry.js',
 	output: [
 		{
 			file: 'dist/wintersky.cjs.js',

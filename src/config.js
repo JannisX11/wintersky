@@ -1,4 +1,5 @@
 import tinycolor from 'tinycolor2'
+import Wintersky from './wintersky';
 
 function parseColor(input) {
 	return new tinycolor(input).toHexString();
@@ -354,4 +355,6 @@ class Config {
 		}
 	}
 }
+Wintersky.Config = Config;
+
 export default Config;

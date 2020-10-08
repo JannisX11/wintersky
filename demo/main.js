@@ -43,8 +43,9 @@ async function initializeApp() {
 		xhr.send();
 	})
 	View.wintersky = new Wintersky.Emitter(content);
-	View.scene.add(View.wintersky.group)
-	View.wintersky.start()
+	View.scene.add(View.wintersky.local_space);
+	View.scene.add(Wintersky.space);
+	View.wintersky.start();
 
 	setInterval(function() {
 		if (!View.wintersky.paused) View.wintersky.tick()
