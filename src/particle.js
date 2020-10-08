@@ -56,9 +56,11 @@ class Particle {
 	add() {
 		if (!this.emitter.particles.includes(this)) {
 			this.emitter.particles.push(this);
-			if (this.emitter.config.space_local_position) {
+			if (this.emitter.config.space_local_position && this.emitter.local_space.parent) {
+				// Add the particle to the local space object if local space is enabled and used
 				this.emitter.local_space.add(this.mesh);
 			} else {
+				// Otherwise add to global space
 				this.emitter.global_space.add(this.mesh);
 			}
 		}

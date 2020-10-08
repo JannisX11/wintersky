@@ -12,6 +12,7 @@ const Wintersky = {
 		max_emitter_particles: 30000,
 		tick_rate: 30,
 		loop_mode: 'auto', // looping, once
+		parent_mode: 'world', // entity, locator
 		get scale() {
 			return Wintersky.global_options._scale;
 		},

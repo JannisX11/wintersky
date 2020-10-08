@@ -14,6 +14,7 @@ const Wintersky = {
 		max_emitter_particles: 30000,
 		tick_rate: 30,
 		loop_mode: 'auto', // looping, once
+		parent_mode: 'world', // entity, locator
 		get scale() {
 			return Wintersky.global_options._scale;
 		},
@@ -482,9 +483,11 @@ class Particle {
 	add() {
 		if (!this.emitter.particles.includes(this)) {
 			this.emitter.particles.push(this);
-			if (this.emitter.config.space_local_position) {
+			if (this.emitter.config.space_local_position && this.emitter.local_space.parent) {
+				// Add the particle to the local space object if local space is enabled and used
 				this.emitter.local_space.add(this.mesh);
 			} else {
+				// Otherwise add to global space
 				this.emitter.global_space.add(this.mesh);
 			}
 		}
@@ -730,6 +733,8 @@ const img$3 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAACwBAMAAAD0wfO
 
 const img$4 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAADACAYAAAANzeNOAAAClklEQVRo3u2Z624UMQyF91URgoqi3ujSG70tqgCB4JWDXOlUpx47dmbUVav1j6NMMj6fnZ0ks9uuWmurJVoVIAZcnx23WQAxRmYXALPWYsDnj+9aCiCBIpjQpgEMYaWnoE2eOayglnIBFgHuLr801hBAmyPQs87hp/etB7AgLsCDyXh3ChLAYhjGwg8xazYBvI11NXUe7B5g823doGEAmyOQaZR3YRYyMR/tf3AhGDMBYoS87IC4UxCzBKC1siOJC+hVgjEXwBAvM5vdx8iBuqqhlRiZaze++Ha+PmuiWQCYtRYDLNCwuQvImDVk8jVfbp4c7LlGxJgAMUIIRMtgaUMAmwEUsdkEMAgGQKDuU+BAS6l1wMGesbbztgDyPni4u3hSGsAmiGFdgGXWkNkAazpDZmsaT+b10X7KjDgTwBmsa5ilNQEcoCG4D5kAngoqEmmzCeAqPHEi9zHqYC9zuJS9jHUebBPwc3PVtIZ/cLAZ/RBgZe5VMmxOA/QUMHZ+cvAMMjGzUYJ1H+0EgGAE4dqTOQXc0MEa1n0KvYza3F0HvbJrN74pwO/vNw1KA2DAWymCuBk9uYDIyNXMAoguTg8fZQLkBmdCX1oZg9kF4CDVZgh/+ugCEKCNXnZ3HSBQt7WZCjAL8OfhtkFDADHgQIkg3awA4frq63FLAXTmXhUTgGTh7LqfAmgBlJoCIBo2ex1EZ0LthQK8PODvj/sGDQHEIBuIATfnp7mlzCYNSm1nyaSzowKrCnMKCGal/kkDM1fC/VqJBdhFwO3luv37tXnU8DcUNuN6GCCSzICkv+JoCDRUQXQG1EIqwK4AsAewiYbPAz4TeuYUoHcWhJ9BZK51UIACbAuAA2X47WxBFlVQj/G1A/4D2cRpqoNd7bwAAAAASUVORK5CYII=";
 
+const dummy_vec = new THREE.Vector3();
+
 function calculateCurve(emitter, curve, params) {
 
 	var position = emitter.Molang.parse(curve.input, params);
@@ -790,8 +795,10 @@ class Emitter {
 		this.particles = [];
 		this.dead_particles = [];
 		this.age = 0;
+		this.view_age = 0;
 		this.enabled = false;
 		this.loop_mode = options.loop_mode || Wintersky.global_options.loop_mode;
+		this.parent_mode = options.parent_mode || Wintersky.global_options.parent_mode;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()];
 		this.tick_variables = {};
 		this.tick_values = {};
@@ -890,6 +897,7 @@ class Emitter {
 	}
 	start() {
 		this.age = 0;
+		this.view_age = 0;
 		this.enabled = true;
 		Wintersky.space.add(this.global_space);
 		var params = this.params();
@@ -914,12 +922,13 @@ class Emitter {
 		let {tick_rate} = Wintersky.global_options;
 		this.tick_values = {};
 
+		// Calculate tick values
 		for (var line of this.config.variables_tick_vars) {
 			let [key, value] = line.split(/\s*=(.+)/);
 			value = value.replace(/^\s*=\s*/, '');
 			this.tick_values[key] = this.Molang.parse(value);
 		}
-
+		// Spawn steady particles
 		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
 			var p_this_tick = this.calculate(this.config.emitter_rate_rate, params)/tick_rate;
 			var x = 1/p_this_tick;
@@ -931,11 +940,13 @@ class Emitter {
 			}
 			this.spawnParticles(p_this_tick);
 		}
+		// Tick particles
 		this.particles.forEach(p => {
 			p.tick(jump);
 		});
 
 		this.age += 1/tick_rate;
+		this.view_age += 1/tick_rate;
 
 		if (this.config.emitter_lifetime_mode === 'expression') {
 			//Expressions
@@ -961,9 +972,14 @@ class Emitter {
 		}
 		return this;
 	}
+	stop() {
+		this.enabled = false;
+		this.age = 0;
+		return this;
+	}
 	jumpTo(second) {
 		let {tick_rate} = Wintersky.global_options;
-		let old_time = Math.round(this.age * tick_rate);
+		let old_time = Math.round(this.view_age * tick_rate);
 		let new_time = Math.round(second * tick_rate);
 		if (this.loop_mode != 'once') {
 			new_time = Math.clamp(new_time, 0, Math.round(this.active_time * tick_rate) - 1);
@@ -975,7 +991,7 @@ class Emitter {
 				particle.remove();
 			});
 		}
-		while (Math.round(this.age * tick_rate) < new_time-1) {
+		while (Math.round(this.view_age * tick_rate) < new_time-1) {
 			this.tick(true);
 		}
 		this.tick(false);
@@ -990,7 +1006,7 @@ class Emitter {
 					break;
 				case 'lookat_y':
 					var v = new THREE.Vector3().copy(camera.position);
-					v.y = p.position.y;
+					v.y = p.mesh.getWorldPosition(dummy_vec).y;
 					p.mesh.lookAt(v);
 					break;
 				case 'rotate_xyz':
@@ -1008,11 +1024,6 @@ class Emitter {
 			}
 			p.mesh.rotation.z += p.rotation||0;
 		});
-	}
-	stop() {
-		this.enabled = false;
-		this.age = 0;
-		return this;
 	}
 	spawnParticles(count) {
 		if (!count) return this;

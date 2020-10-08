@@ -12,7 +12,7 @@ import FlameAtlasTex from '../assets/flame_atlas.png';
 import SoulTex from '../assets/soul.png';
 import CampfireSmokeTex from '../assets/campfire_smoke.png';
 
-
+const dummy_vec = new THREE.Vector3();
 
 function calculateCurve(emitter, curve, params) {
 
@@ -74,8 +74,10 @@ class Emitter {
 		this.particles = [];
 		this.dead_particles = [];
 		this.age = 0;
+		this.view_age = 0;
 		this.enabled = false;
 		this.loop_mode = options.loop_mode || Wintersky.global_options.loop_mode;
+		this.parent_mode = options.parent_mode || Wintersky.global_options.parent_mode;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
 		this.tick_variables = {};
 		this.tick_values = {};
@@ -176,6 +178,7 @@ class Emitter {
 	}
 	start() {
 		this.age = 0;
+		this.view_age = 0;
 		this.enabled = true;
 		Wintersky.space.add(this.global_space);
 		var params = this.params()
@@ -200,12 +203,13 @@ class Emitter {
 		let {tick_rate} = Wintersky.global_options;
 		this.tick_values = {};
 
+		// Calculate tick values
 		for (var line of this.config.variables_tick_vars) {
 			let [key, value] = line.split(/\s*=(.+)/);
 			value = value.replace(/^\s*=\s*/, '');
 			this.tick_values[key] = this.Molang.parse(value)
 		}
-
+		// Spawn steady particles
 		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
 			var p_this_tick = this.calculate(this.config.emitter_rate_rate, params)/tick_rate
 			var x = 1/p_this_tick;
@@ -217,11 +221,13 @@ class Emitter {
 			}
 			this.spawnParticles(p_this_tick)
 		}
+		// Tick particles
 		this.particles.forEach(p => {
 			p.tick(jump)
 		})
 
 		this.age += 1/tick_rate;
+		this.view_age += 1/tick_rate;
 
 		if (this.config.emitter_lifetime_mode === 'expression') {
 			//Expressions
@@ -247,9 +253,14 @@ class Emitter {
 		}
 		return this;
 	}
+	stop() {
+		this.enabled = false;
+		this.age = 0;
+		return this;
+	}
 	jumpTo(second) {
 		let {tick_rate} = Wintersky.global_options;
-		let old_time = Math.round(this.age * tick_rate)
+		let old_time = Math.round(this.view_age * tick_rate)
 		let new_time = Math.round(second * tick_rate);
 		if (this.loop_mode != 'once') {
 			new_time = Math.clamp(new_time, 0, Math.round(this.active_time * tick_rate) - 1);
@@ -261,7 +272,7 @@ class Emitter {
 				particle.remove();
 			})
 		}
-		while (Math.round(this.age * tick_rate) < new_time-1) {
+		while (Math.round(this.view_age * tick_rate) < new_time-1) {
 			this.tick(true);
 		}
 		this.tick(false);
@@ -276,7 +287,7 @@ class Emitter {
 					break;
 				case 'lookat_y':
 					var v = new THREE.Vector3().copy(camera.position);
-					v.y = p.position.y;
+					v.y = p.mesh.getWorldPosition(dummy_vec).y;
 					p.mesh.lookAt(v);
 					break;
 				case 'rotate_xyz':
@@ -294,11 +305,6 @@ class Emitter {
 			}
 			p.mesh.rotation.z += p.rotation||0;
 		})
-	}
-	stop() {
-		this.enabled = false;
-		this.age = 0;
-		return this;
 	}
 	spawnParticles(count) {
 		if (!count) return this;

@@ -30,7 +30,7 @@ async function initializeApp() {
 	// Initialize Particles
 	let content = await new Promise((resolve, reject) => {
 		var xhr = new XMLHttpRequest();
-		xhr.open('GET', '../examples/trail.particle.json', true);
+		xhr.open('GET', '../examples/rainbow.particle.json', true);
 		xhr.responseType = 'json';
 		xhr.onload = function() {
 			var status = xhr.status;
@@ -43,7 +43,6 @@ async function initializeApp() {
 		xhr.send();
 	})
 	View.wintersky = new Wintersky.Emitter(content);
-	View.scene.add(View.wintersky.local_space);
 	View.scene.add(Wintersky.space);
 	View.wintersky.start();
 
