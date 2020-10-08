@@ -576,8 +576,16 @@ class Particle {
 		this.speed.z *= speed;
 
 		this.position.add(this.emitter.calculate(this.emitter.config.emitter_shape_offset, params));
-		
+
+		if (this.emitter.parent_mode == 'locator') {
+			this.position.x *= -1;
+			this.position.y *= -1;
+			this.speed.x *= -1;
+			this.speed.y *= -1;
+		}
+
 		if (this.emitter.local_space.parent) {
+
 			if (!this.emitter.config.space_local_rotation) {
 				this.position.applyQuaternion(this.emitter.local_space.getWorldQuaternion(new THREE.Quaternion()));
 			}
@@ -613,6 +621,15 @@ class Particle {
 			//Position
 			var drag = this.emitter.calculate(this.emitter.config.particle_motion_linear_drag_coefficient, params);
 			this.acceleration = this.emitter.calculate(this.emitter.config.particle_motion_linear_acceleration, params);
+			if (this.emitter.config.space_local_position) {
+				if (this.emitter.parent_mode == 'locator') {
+					this.acceleration.x *= -1;
+					this.acceleration.y *= -1;
+				}
+			} else if (this.emitter.parent_mode != 'world') {
+				this.acceleration.x *= -1;
+				this.acceleration.z *= -1;
+			}
 			this.acceleration.addScaledVector(this.speed, -drag);
 			this.speed.addScaledVector(this.acceleration, 1/tick_rate);
 			this.position.addScaledVector(this.speed, 1/tick_rate);
