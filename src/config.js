@@ -1,12 +1,19 @@
 import tinycolor from 'tinycolor2'
 import Wintersky from './wintersky';
 
+import MissingTex from '../assets/missing.png';
+import ParticlesTex from '../assets/particles.png';
+import FlameAtlasTex from '../assets/flame_atlas.png';
+import SoulTex from '../assets/soul.png';
+import CampfireSmokeTex from '../assets/campfire_smoke.png';
+
 function parseColor(input) {
 	return new tinycolor(input).toHexString();
 }
 
 class Config {
 	constructor(config, options = 0) {
+		this.texture = new THREE.Texture(new Image());
 		this.reset()
 
 		if (config && config.particle_effect) {
@@ -17,6 +24,10 @@ class Config {
 		if (options.path) this.set('file_path', options.path);
 	}
 	reset() {
+		this.texture.image.src = MissingTex;
+		this.texture.magFilter = THREE.NearestFilter;
+		this.texture.minFilter = THREE.NearestFilter;
+
 		this.identifier = '';
 		this.file_path = '';
 		this.curves = {};
@@ -49,8 +60,8 @@ class Config {
 		this.particle_motion_linear_speed = '';
 		this.particle_motion_linear_acceleration = [0, 0, 0];
 		this.particle_motion_linear_drag_coefficient = '';
-		this.particle_motion_relative_position = '';
-		this.particle_motion_direction = '';
+		this.particle_motion_relative_position = [];
+		this.particle_motion_direction = [];
 		this.particle_rotation_mode = 'dynamic';
 		this.particle_rotation_initial_rotation = '';
 		this.particle_rotation_rotation_rate = '';
@@ -101,8 +112,8 @@ class Config {
 			this[key] = val;
 		} else if (typeof this[key] == 'boolean') {
 			this[key] = !!val;
-			
 		}
+		return this;
 	}
 	setFromJSON(data) {
 
@@ -353,6 +364,41 @@ class Config {
 				}
 			}
 		}
+
+		this.updateTexture();
+		return this;
+	}
+	updateTexture() {
+		var scope = this;
+		var url;
+		var path = this.particle_texture_path;
+
+		switch (path) {
+			case 'textures/particle/particles':
+				url = ParticlesTex;
+				break;
+			case 'textures/flame_atlas': case 'textures/particle/flame_atlas':
+				url = FlameAtlasTex;
+				break;
+			case 'textures/particle/soul':
+				url = SoulTex;
+				break;
+			case 'textures/particle/campfire_smoke':
+				url = CampfireSmokeTex;
+				break;
+			default:
+				url = MissingTex;
+				break;
+		}
+		if (url == MissingTex && typeof Wintersky.fetchTexture == 'function') {
+			let result = Wintersky.fetchTexture(this);
+			if (result) url = result;
+		}
+		this.texture.image.src = url;
+		this.texture.image.onload = () => {
+			this.texture.needsUpdate = true;
+		}
+		return this;
 	}
 }
 Wintersky.Config = Config;

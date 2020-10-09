@@ -155,6 +155,9 @@ class Particle {
 			this.position.y *= -1;
 			this.speed.x *= -1;
 			this.speed.y *= -1;
+		} else if (this.emitter.config.space_local_position && !this.emitter.config.space_local_rotation) {
+			this.speed.x *= -1;
+			this.speed.z *= -1;
 		}
 
 		if (this.emitter.local_space.parent) {

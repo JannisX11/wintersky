@@ -6,12 +6,6 @@ import Config from './config';
 import Particle from './particle';
 import {MathUtil, Normals, removeFromArray} from './util';
 
-import MissingTex from '../assets/missing.png';
-import ParticlesTex from '../assets/particles.png';
-import FlameAtlasTex from '../assets/flame_atlas.png';
-import SoulTex from '../assets/soul.png';
-import CampfireSmokeTex from '../assets/campfire_smoke.png';
-
 const dummy_vec = new THREE.Vector3();
 
 function calculateCurve(emitter, curve, params) {
@@ -51,6 +45,8 @@ class Emitter {
 	constructor(config, options = 0) {
 		Wintersky.emitters.push(this);
 
+		this.config = config instanceof Config ? config : new Config(config, options);
+
 		this.Molang = new Molang();
 		this.Molang.variableHandler = (key, params) => {
 			return this.creation_values[key]
@@ -67,9 +63,9 @@ class Emitter {
 			color: 0xffffff,
 			transparent: true,
 			vertexColors: THREE.FaceColors,
-			alphaTest: 0.2
+			alphaTest: 0.2,
+			map: this.config.texture
 		});
-		this.config = config instanceof Config ? config : new Config(config, options);
 
 		this.particles = [];
 		this.dead_particles = [];
@@ -145,41 +141,13 @@ class Emitter {
 		this.updateMaterial();
 	}
 	updateMaterial() {
-		var scope = this;
-		var url;
-		var path = this.config.particle_texture_path;
-
-		switch (path) {
-			case 'textures/particle/particles':
-				url = ParticlesTex;
-				break;
-			case 'textures/flame_atlas': case 'textures/particle/flame_atlas':
-				url = FlameAtlasTex;
-				break;
-			case 'textures/particle/soul':
-				url = SoulTex;
-				break;
-			case 'textures/particle/campfire_smoke':
-				url = CampfireSmokeTex;
-				break;
-			default:
-				url = MissingTex;
-				break;
-		}
-		if (url == MissingTex && typeof Wintersky.fetchTexture == 'function') {
-			let result = Wintersky.fetchTexture(this.config);
-			if (result) url = result;
-		}
-		var tex = new THREE.TextureLoader().load(url, function(a, b) {
-			tex.magFilter = THREE.NearestFilter;
-			tex.minFilter = THREE.NearestFilter;
-			scope.material.map = tex;
-		})
+		this.config.updateTexture();
 	}
 	start() {
 		this.age = 0;
 		this.view_age = 0;
 		this.enabled = true;
+		this.initialized = true;
 		Wintersky.space.add(this.global_space);
 		var params = this.params()
 		this.active_time = this.calculate(this.config.emitter_lifetime_active_time, params)
@@ -271,6 +239,8 @@ class Emitter {
 			this.particles.slice().forEach(particle => {
 				particle.remove();
 			})
+		} else if (!this.initialized) {
+			this.start();
 		}
 		while (Math.round(this.view_age * tick_rate) < new_time-1) {
 			this.tick(true);
@@ -327,6 +297,11 @@ class Emitter {
 		return count;
 	}
 	delete() {
+		[...this.particles, ...this.dead_particles].forEach(particle => {
+			if (particle.mesh.parent) particle.mesh.parent.remove(particle.mesh);
+		})
+		this.particles.splice(0, Infinity);
+		this.dead_particles.splice(0, Infinity);
 		if (this.local_space.parent) this.local_space.parent.remove(this.local_space);
 		if (this.global_space.parent) this.global_space.parent.remove(this.global_space);
 		removeFromArray(Wintersky.emitters, this);
