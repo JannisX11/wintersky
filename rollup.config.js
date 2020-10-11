@@ -1,4 +1,7 @@
 import image from '@rollup/plugin-image';
+import { terser } from "rollup-plugin-terser";
+
+const production = !process.env.ROLLUP_WATCH;
 
 export default {
 	input: 'src/entry.js',
@@ -23,5 +26,8 @@ export default {
 		}
 	],
 	external: ['molangjs', 'three', 'tinycolor2'],
-	plugins: [image()]
+	plugins: [
+		image(),
+		production && terser()
+	]
 }
