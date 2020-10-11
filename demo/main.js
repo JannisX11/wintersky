@@ -49,11 +49,7 @@ async function initializeApp() {
 	let content = await loadJSON('../examples/rainbow.particle.json');
 	View.emitter = new Wintersky.Emitter(content);
 	View.scene.add(Wintersky.space);
-	View.emitter.start();
-	// Set rendering loop
-	setInterval(function() {
-		if (!View.emitter.paused) View.emitter.tick()
-	}, 1000/30)
+	View.emitter.play();
 }
 
 function animate() {

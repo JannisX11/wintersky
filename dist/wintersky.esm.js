@@ -1010,6 +1010,19 @@ class Emitter {
 		this.age = 0;
 		return this;
 	}
+	play() {
+		if (!this.initialized) {
+			this.start();
+		}
+		this.tick_interval = setInterval(() => {
+			this.tick();
+		}, 1000/Wintersky.global_options.tick_rate);
+		return this;
+	}
+	pause() {
+		clearInterval(this.tick_interval);
+		return this;
+	}
 	jumpTo(second) {
 		let {tick_rate} = Wintersky.global_options;
 		let old_time = Math.round(this.view_age * tick_rate);
@@ -1041,7 +1054,9 @@ class Emitter {
 					break;
 				case 'lookat_y':
 					var v = new Vector3().copy(camera.position);
-					v.y = p.mesh.getWorldPosition(dummy_vec).y;
+					dummy_vec.set(0, 0, 0);
+					p.mesh.localToWorld(dummy_vec);
+					v.y = dummy_vec.y;
 					p.mesh.lookAt(v);
 					break;
 				case 'rotate_xyz':
