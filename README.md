@@ -1,6 +1,8 @@
 # Wintersky
 Particle effect renderer based on THREE.js
 
+* Demo: [Wintersky Rainbow Demo](https://jannisx11.github.io/wintersky/demo/)
+
 ## Installation
 
 `npm i wintersky`

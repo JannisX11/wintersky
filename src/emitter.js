@@ -1,5 +1,5 @@
 import Molang from 'molangjs';
-import THREE from 'three';
+import * as THREE from 'three';
 
 import Wintersky from './wintersky';
 import Config from './config';

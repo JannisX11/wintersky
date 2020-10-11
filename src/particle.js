@@ -1,4 +1,4 @@
-import THREE from 'three';
+import * as THREE from 'three';
 import tinycolor from 'tinycolor2';
 
 import {MathUtil, Normals, removeFromArray} from './util';

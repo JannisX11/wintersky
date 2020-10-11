@@ -1,5 +1,23 @@
 const View = {};
 
+async function loadJSON(path) {
+	let content = await new Promise((resolve, reject) => {
+		var xhr = new XMLHttpRequest();
+		xhr.open('GET', path, true);
+		xhr.responseType = 'json';
+		xhr.onload = function() {
+			var status = xhr.status;
+			if (status === 200) {
+				resolve(xhr.response);
+			} else {
+				reject(xhr.response);
+			}
+		};
+		xhr.send();
+	})
+	return content;
+}
+
 async function initializeApp() {
 	View.canvas = document.getElementById('preview')
 	View.camera = new THREE.PerspectiveCamera(45, 16/9, 0.1, 3000);
@@ -14,7 +32,7 @@ async function initializeApp() {
 	View.controls = new THREE.OrbitControls(View.camera, View.canvas);
 	View.controls.target.set(0, 0.8, 0)
 	View.controls.screenSpacePanning = true;
-	View.controls.zoomSpeed = 1.4
+	View.controls.zoomSpeed = 1.4;
 
 	View.scene = new THREE.Scene()
 
@@ -28,35 +46,25 @@ async function initializeApp() {
 	animate()
 
 	// Initialize Particles
-	let content = await new Promise((resolve, reject) => {
-		var xhr = new XMLHttpRequest();
-		xhr.open('GET', '../examples/rainbow.particle.json', true);
-		xhr.responseType = 'json';
-		xhr.onload = function() {
-			var status = xhr.status;
-			if (status === 200) {
-				resolve(xhr.response);
-			} else {
-				reject(xhr.response);
-			}
-		};
-		xhr.send();
-	})
-	View.wintersky = new Wintersky.Emitter(content);
+	let content = await loadJSON('../examples/rainbow.particle.json');
+	View.emitter = new Wintersky.Emitter(content);
 	View.scene.add(Wintersky.space);
-	View.wintersky.start();
-
+	View.emitter.start();
+	// Set rendering loop
 	setInterval(function() {
-		if (!View.wintersky.paused) View.wintersky.tick()
+		if (!View.emitter.paused) View.emitter.tick()
 	}, 1000/30)
 }
 
 function animate() {
 	requestAnimationFrame(animate);
 	View.controls.update();
+	// Update Particle facing rotation
 	Wintersky.updateFacingRotation(View.camera);
+	// Render
 	View.renderer.render(View.scene, View.camera);
 }
+
 function resizeCanvas() {
 	var wrapper = View.canvas.parentNode;
 	var height = wrapper.clientHeight
@@ -68,4 +76,5 @@ function resizeCanvas() {
 	View.renderer.setSize(width, height);
 	View.renderer.setPixelRatio(window.devicePixelRatio);
 }
+
 window.addEventListener('resize', resizeCanvas, false);

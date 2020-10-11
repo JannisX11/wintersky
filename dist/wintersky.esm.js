@@ -1,10 +1,10 @@
-import THREE$1 from 'three';
+import { Object3D, Vector3, Euler, PlaneGeometry, Mesh, Quaternion, Color, MeshBasicMaterial, FaceColors, Plane, Vector2, SplineCurve } from 'three';
 import Molang from 'molangjs';
 import tinycolor from 'tinycolor2';
 
 const Wintersky = {
 	emitters: [],
-	space: new THREE$1.Object3D(),
+	space: new Object3D(),
 	updateFacingRotation(camera) {
 		Wintersky.emitters.forEach(emitter => {
 			emitter.updateFacingRotation(camera);
@@ -459,7 +459,7 @@ const MathUtil = {
 		return Math.round(num * d) / d
 	},
 	getRandomEuler() {
-		return new THREE$1.Euler(
+		return new Euler(
 			MathUtil.randomab(-Math.PI, Math.PI),
 			MathUtil.randomab(-Math.PI, Math.PI),
 			MathUtil.randomab(-Math.PI, Math.PI)
@@ -468,10 +468,10 @@ const MathUtil = {
 };
 
 const Normals = {
-	x: new THREE$1.Vector3(1, 0, 0),
-	y: new THREE$1.Vector3(0, 1, 0),
-	z: new THREE$1.Vector3(0, 0, 1),
-	n: new THREE$1.Vector3(0, 0, 0),
+	x: new Vector3(1, 0, 0),
+	y: new Vector3(0, 1, 0),
+	z: new Vector3(0, 0, 1),
+	n: new Vector3(0, 0, 0),
 };
 
 function removeFromArray(array, item) {
@@ -500,7 +500,7 @@ function calculateGradient(gradient, percent) {
 	} else {
 		var color = '#ffffff';
 	}
-	return new THREE$1.Color(color);
+	return new Color(color);
 }
 
 
@@ -509,13 +509,13 @@ class Particle {
 		this.emitter = emitter;
 		if (!data) data = 0;
 
-		this.geometry = new THREE$1.PlaneGeometry(1, 1);
+		this.geometry = new PlaneGeometry(1, 1);
 		this.material = this.emitter.material.clone();
-		this.mesh = new THREE$1.Mesh(this.geometry, this.material);
+		this.mesh = new Mesh(this.geometry, this.material);
 		this.position = this.mesh.position;
 
-		this.speed = data.speed||new THREE$1.Vector3();
-		this.acceleration = data.acceleration||new THREE$1.Vector3();
+		this.speed = data.speed||new Vector3();
+		this.acceleration = data.acceleration||new Vector3();
 
 		this.add();
 	}
@@ -569,7 +569,7 @@ class Particle {
 				this.position.setComponent(face, size.getComponent(face) * (side?1:-1));
 			}
 		} else if (this.emitter.config.emitter_shape_mode === 'entity_aabb') {
-			var size = new THREE$1.Vector3(0.5, 1, 0.5);
+			var size = new Vector3(0.5, 1, 0.5);
 
 			this.position.x = MathUtil.randomab(-size.x, size.x);
 			this.position.y = MathUtil.randomab(-size.y, size.y);
@@ -599,12 +599,12 @@ class Particle {
 
 			var normal = this.emitter.calculate(this.emitter.config.emitter_shape_plane_normal, params);
 			if (!normal.equals(Normals.n)) {
-				var q = new THREE$1.Quaternion().setFromUnitVectors(Normals.y, normal);
+				var q = new Quaternion().setFromUnitVectors(Normals.y, normal);
 				this.position.applyQuaternion(q);
 			}
 		}
 		//Speed
-		this.speed = new THREE$1.Vector3();
+		this.speed = new Vector3();
 		var dir = this.emitter.config.particle_direction_mode;
 		if (dir == 'inwards' || dir == 'outwards') {
 
@@ -639,10 +639,10 @@ class Particle {
 		if (this.emitter.local_space.parent) {
 
 			if (!this.emitter.config.space_local_rotation) {
-				this.position.applyQuaternion(this.emitter.local_space.getWorldQuaternion(new THREE$1.Quaternion()));
+				this.position.applyQuaternion(this.emitter.local_space.getWorldQuaternion(new Quaternion()));
 			}
 			if (!this.emitter.config.space_local_position) {
-				let offset = this.emitter.local_space.getWorldPosition(new THREE$1.Vector3());
+				let offset = this.emitter.local_space.getWorldPosition(new Vector3());
 				this.position.addScaledVector(offset, 1/Wintersky.global_options._scale);
 			}
 		}
@@ -792,7 +792,7 @@ class Particle {
 }
 Wintersky.Particle = Particle;
 
-const dummy_vec = new THREE$1.Vector3();
+const dummy_vec = new Vector3();
 
 function calculateCurve(emitter, curve, params) {
 
@@ -815,9 +815,9 @@ function calculateCurve(emitter, curve, params) {
 	} else if (curve.mode == 'catmull_rom') {
 		var vectors = [];
 		curve.nodes.forEach((val, i) => {
-			vectors.push(new THREE$1.Vector2(i-1, val));
+			vectors.push(new Vector2(i-1, val));
 		});
-		var spline = new THREE$1.SplineCurve(vectors);
+		var spline = new SplineCurve(vectors);
 
 		var segments = curve.nodes.length-3;
 		position *= segments;
@@ -841,14 +841,14 @@ class Emitter {
 		};
 
 		let global_scale = Wintersky.global_options._scale;
-		this.local_space = new THREE$1.Object3D();
+		this.local_space = new Object3D();
 		this.local_space.scale.set(global_scale, global_scale, global_scale);
-		this.global_space = new THREE$1.Object3D();
+		this.global_space = new Object3D();
 		this.global_space.scale.set(global_scale, global_scale, global_scale);
-		this.material = new THREE$1.MeshBasicMaterial({
+		this.material = new MeshBasicMaterial({
 			color: 0xffffff,
 			transparent: true,
-			vertexColors: THREE$1.FaceColors,
+			vertexColors: FaceColors,
 			alphaTest: 0.2,
 			map: this.config.texture
 		});
@@ -898,20 +898,20 @@ class Emitter {
 				});
 
 			} else if (input.length === 4) {
-				data = new THREE$1.Plane().setComponents(
+				data = new Plane().setComponents(
 					getV(input[0]),
 					getV(input[1]),
 					getV(input[2]),
 					getV(input[3])
 				);
 			} else if (input.length === 3) {
-				data = new THREE$1.Vector3(
+				data = new Vector3(
 					getV(input[0]),
 					getV(input[1]),
 					getV(input[2])
 				);
 			} else if (input.length === 2) {
-				data = new THREE$1.Vector2(
+				data = new Vector2(
 					getV(input[0]),
 					getV(input[1])
 				);
@@ -1040,7 +1040,7 @@ class Emitter {
 					p.mesh.lookAt(camera.position);
 					break;
 				case 'lookat_y':
-					var v = new THREE$1.Vector3().copy(camera.position);
+					var v = new Vector3().copy(camera.position);
 					v.y = p.mesh.getWorldPosition(dummy_vec).y;
 					p.mesh.lookAt(v);
 					break;
@@ -1053,7 +1053,7 @@ class Emitter {
 					p.mesh.rotation.x = p.mesh.rotation.z = 0;
 					break;
 				case 'direction':
-					var q = new THREE$1.Quaternion().setFromUnitVectors(Normals.z, p.speed);
+					var q = new Quaternion().setFromUnitVectors(Normals.z, p.speed);
 					p.mesh.rotation.setFromQuaternion(q);
 					break;
 			}
