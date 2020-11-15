@@ -17,6 +17,7 @@
 				emitter.updateFacingRotation(camera);
 			});
 		},
+		fetchTexture: null,
 		global_options: {
 			max_emitter_particles: 30000,
 			tick_rate: 30,
@@ -357,7 +358,7 @@
 
 
 				if (comp('particle_motion_collision')) {
-					this.set('particle_collision_enabled', comp('particle_motion_collision').enabled || true);
+					this.set('particle_collision_enabled', comp('particle_motion_collision').enabled);
 					this.set('particle_collision_collision_drag', comp('particle_motion_collision').collision_drag);
 					this.set('particle_collision_coefficient_of_restitution', comp('particle_motion_collision').coefficient_of_restitution);
 					this.set('particle_collision_collision_radius', comp('particle_motion_collision').collision_radius);
@@ -506,6 +507,8 @@
 				} else {
 					continueLoading(result);
 				}
+			} else {
+				continueLoading();
 			}
 			return this;
 		}
@@ -575,7 +578,7 @@
 		particle_color_gradient: {type: 'object', array: true},
 		particle_color_expression: {type: 'molang', array: true, dimensions: 3},
 		particle_color_light: {type: 'boolean'},
-		particle_collision_enabled: {type: 'boolean'},
+		particle_collision_enabled: {type: 'molang'},
 		particle_collision_collision_drag: {type: 'number'},
 		particle_collision_coefficient_of_restitution: {type: 'number'},
 		particle_collision_collision_radius: {type: 'number'},
@@ -658,7 +661,7 @@
 			if (!data) data = 0;
 
 			this.geometry = new THREE.PlaneGeometry(1, 1);
-			this.material = this.emitter.material.clone();
+			this.material = this.emitter.material;
 			this.mesh = new THREE.Mesh(this.geometry, this.material);
 			this.position = this.mesh.position;
 
@@ -692,8 +695,6 @@
 			this.age = this.loop_time = 0;
 			this.current_frame = 0;
 			this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()];
-			this.material.copy(this.emitter.material);
-			this.material.needsUpdate = true;
 			var params = this.params();
 
 			this.position.set(0, 0, 0);

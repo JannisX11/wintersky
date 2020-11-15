@@ -8,6 +8,7 @@ const Wintersky = {
 			emitter.updateFacingRotation(camera);
 		});
 	},
+	fetchTexture: null,
 	global_options: {
 		max_emitter_particles: 30000,
 		tick_rate: 30,

@@ -34,7 +34,7 @@ class Particle {
 		if (!data) data = 0;
 
 		this.geometry = new THREE.PlaneGeometry(1, 1)
-		this.material = this.emitter.material.clone();
+		this.material = this.emitter.material;
 		this.mesh = new THREE.Mesh(this.geometry, this.material)
 		this.position = this.mesh.position;
 
@@ -68,8 +68,6 @@ class Particle {
 		this.age = this.loop_time = 0;
 		this.current_frame = 0;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
-		this.material.copy(this.emitter.material)
-		this.material.needsUpdate = true;
 		var params = this.params()
 
 		this.position.set(0, 0, 0)
