@@ -278,20 +278,45 @@ class Config {
 				this.set('particle_lifetime_kill_plane', comp('particle_kill_plane'));
 			}
 
+
 			if (comp('particle_motion_dynamic')) {
-				this.set('particle_motion_mode', 'dynamic');
-				this.set('particle_motion_linear_acceleration', comp('particle_motion_dynamic').linear_acceleration);
-				this.set('particle_motion_linear_drag_coefficient', comp('particle_motion_dynamic').linear_drag_coefficient);
-				this.set('particle_rotation_rotation_acceleration', comp('particle_motion_dynamic').rotation_acceleration);
-				this.set('particle_rotation_rotation_drag_coefficient', comp('particle_motion_dynamic').rotation_drag_coefficient);
-				this.set('particle_motion_linear_speed', 1);
+				//this.set('particle_motion_mode', 'dynamic');
+				let linear_acceleration = comp('particle_motion_dynamic').linear_acceleration;
+				let linear_drag_coefficient = comp('particle_motion_dynamic').linear_drag_coefficient;
+				let rotation_acceleration = comp('particle_motion_dynamic').rotation_acceleration;
+				let rotation_drag_coefficient = comp('particle_motion_dynamic').rotation_drag_coefficient;
+
+				if (linear_acceleration != undefined || linear_drag_coefficient != undefined) {
+					this.set('particle_motion_mode', 'dynamic');
+					this.set('particle_motion_linear_acceleration', linear_acceleration);
+					this.set('particle_motion_linear_drag_coefficient', linear_drag_coefficient);
+					this.set('particle_motion_linear_speed', 1);
+				}
+				if (linear_acceleration != undefined || linear_drag_coefficient != undefined) {
+					this.set('particle_rotation_mode', 'dynamic');
+					this.set('particle_rotation_rotation_acceleration', rotation_acceleration);
+					this.set('particle_rotation_rotation_drag_coefficient', rotation_drag_coefficient);
+				}
 			}
 			if (comp('particle_motion_parametric')) {
-				this.set('particle_motion_mode', 'parametric');
-				this.set('particle_motion_relative_position', comp('particle_motion_parametric').relative_position);
-				this.set('particle_motion_direction', comp('particle_motion_parametric').direction);
-				this.set('particle_rotation_rotation', comp('particle_motion_parametric').rotation);
+				let relative_position = comp('particle_motion_parametric').relative_position;
+				let direction = comp('particle_motion_parametric').direction;
+				let rotation = comp('particle_motion_parametric').rotation;
+
+				if (relative_position != undefined || direction != undefined) {
+					this.set('particle_motion_mode', 'parametric');
+					this.set('particle_motion_relative_position', relative_position);
+					this.set('particle_motion_direction', direction);
+				}
+				if (rotation != undefined) {
+					this.set('particle_rotation_mode', 'parametric');
+					this.set('particle_rotation_rotation', rotation);
+				}
 			}
+
+
+
+
 			if (comp('particle_motion_collision')) {
 				this.set('particle_collision_enabled', comp('particle_motion_collision').enabled || true);
 				this.set('particle_collision_collision_drag', comp('particle_motion_collision').collision_drag);

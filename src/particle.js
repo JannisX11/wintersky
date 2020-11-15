@@ -210,18 +210,37 @@ class Particle {
 			this.speed.addScaledVector(this.acceleration, 1/tick_rate);
 			this.position.addScaledVector(this.speed, 1/tick_rate);
 
-			//Rotation
+			if (this.emitter.config.particle_lifetime_kill_plane.join('')) {
+				var plane = this.emitter.calculate(this.emitter.config.particle_lifetime_kill_plane, params);
+				var start_point = new THREE.Vector3().copy(this.position).addScaledVector(this.speed, -1/30);
+				var line = new THREE.Line3(start_point, this.position)
+				if (plane.intersectsLine(line)) {
+					this.remove();
+				}
+			}
+
+		} else if (this.emitter.config.particle_motion_mode === 'dynamic' && !jump) {
+			if (this.emitter.config.particle_motion_relative_position.join('').length) {
+				this.position.copy(this.emitter.calculate(this.emitter.config.particle_motion_relative_position, params));
+			}
+			if (this.emitter.config.particle_motion_direction.join('').length) {
+				this.speed.copy(this.emitter.calculate(this.emitter.config.particle_motion_direction, params));
+			}
+		}
+
+		// Rotation
+		if (this.emitter.config.particle_rotation_mode === 'dynamic') {
 			var rot_drag = this.emitter.calculate(this.emitter.config.particle_rotation_rotation_drag_coefficient, params)
 			var rot_acceleration = this.emitter.calculate(this.emitter.config.particle_rotation_rotation_acceleration, params)
 				rot_acceleration += -rot_drag * this.rotation_rate;
 			this.rotation_rate += rot_acceleration*1/tick_rate;
 			this.rotation = MathUtil.degToRad(this.initial_rotation + this.rotation_rate*this.age);
-		} else if (!jump) {
-			if (this.emitter.config.particle_motion_relative_position.join('').length) {
-				this.position.copy(this.emitter.calculate(this.emitter.config.particle_motion_relative_position, params));
-			}
+
+		} else if (this.emitter.config.particle_rotation_mode === 'parametric') {
+
 			this.rotation = MathUtil.degToRad(this.emitter.calculate(this.emitter.config.particle_rotation_rotation, params));
 		}
+		
 
 		if (!jump) {
 			//Size

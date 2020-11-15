@@ -1,4 +1,4 @@
-import { Object3D, Texture, NearestFilter, Vector3, Euler, PlaneGeometry, Mesh, Quaternion, Color, MeshBasicMaterial, FaceColors, Plane, Vector2, SplineCurve } from 'three';
+import { Object3D, Texture, NearestFilter, Vector3, Euler, PlaneGeometry, Mesh, Quaternion, Line3, Color, MeshBasicMaterial, FaceColors, Plane, Vector2, SplineCurve } from 'three';
 import Molang from 'molangjs';
 import tinycolor from 'tinycolor2';
 
@@ -310,20 +310,45 @@ class Config {
 				this.set('particle_lifetime_kill_plane', comp('particle_kill_plane'));
 			}
 
+
 			if (comp('particle_motion_dynamic')) {
-				this.set('particle_motion_mode', 'dynamic');
-				this.set('particle_motion_linear_acceleration', comp('particle_motion_dynamic').linear_acceleration);
-				this.set('particle_motion_linear_drag_coefficient', comp('particle_motion_dynamic').linear_drag_coefficient);
-				this.set('particle_rotation_rotation_acceleration', comp('particle_motion_dynamic').rotation_acceleration);
-				this.set('particle_rotation_rotation_drag_coefficient', comp('particle_motion_dynamic').rotation_drag_coefficient);
-				this.set('particle_motion_linear_speed', 1);
+				//this.set('particle_motion_mode', 'dynamic');
+				let linear_acceleration = comp('particle_motion_dynamic').linear_acceleration;
+				let linear_drag_coefficient = comp('particle_motion_dynamic').linear_drag_coefficient;
+				let rotation_acceleration = comp('particle_motion_dynamic').rotation_acceleration;
+				let rotation_drag_coefficient = comp('particle_motion_dynamic').rotation_drag_coefficient;
+
+				if (linear_acceleration != undefined || linear_drag_coefficient != undefined) {
+					this.set('particle_motion_mode', 'dynamic');
+					this.set('particle_motion_linear_acceleration', linear_acceleration);
+					this.set('particle_motion_linear_drag_coefficient', linear_drag_coefficient);
+					this.set('particle_motion_linear_speed', 1);
+				}
+				if (linear_acceleration != undefined || linear_drag_coefficient != undefined) {
+					this.set('particle_rotation_mode', 'dynamic');
+					this.set('particle_rotation_rotation_acceleration', rotation_acceleration);
+					this.set('particle_rotation_rotation_drag_coefficient', rotation_drag_coefficient);
+				}
 			}
 			if (comp('particle_motion_parametric')) {
-				this.set('particle_motion_mode', 'parametric');
-				this.set('particle_motion_relative_position', comp('particle_motion_parametric').relative_position);
-				this.set('particle_motion_direction', comp('particle_motion_parametric').direction);
-				this.set('particle_rotation_rotation', comp('particle_motion_parametric').rotation);
+				let relative_position = comp('particle_motion_parametric').relative_position;
+				let direction = comp('particle_motion_parametric').direction;
+				let rotation = comp('particle_motion_parametric').rotation;
+
+				if (relative_position != undefined || direction != undefined) {
+					this.set('particle_motion_mode', 'parametric');
+					this.set('particle_motion_relative_position', relative_position);
+					this.set('particle_motion_direction', direction);
+				}
+				if (rotation != undefined) {
+					this.set('particle_rotation_mode', 'parametric');
+					this.set('particle_rotation_rotation', rotation);
+				}
 			}
+
+
+
+
 			if (comp('particle_motion_collision')) {
 				this.set('particle_collision_enabled', comp('particle_motion_collision').enabled || true);
 				this.set('particle_collision_collision_drag', comp('particle_motion_collision').collision_drag);
@@ -802,18 +827,37 @@ class Particle {
 			this.speed.addScaledVector(this.acceleration, 1/tick_rate);
 			this.position.addScaledVector(this.speed, 1/tick_rate);
 
-			//Rotation
+			if (this.emitter.config.particle_lifetime_kill_plane.join('')) {
+				var plane = this.emitter.calculate(this.emitter.config.particle_lifetime_kill_plane, params);
+				var start_point = new Vector3().copy(this.position).addScaledVector(this.speed, -1/30);
+				var line = new Line3(start_point, this.position);
+				if (plane.intersectsLine(line)) {
+					this.remove();
+				}
+			}
+
+		} else if (this.emitter.config.particle_motion_mode === 'dynamic' && !jump) {
+			if (this.emitter.config.particle_motion_relative_position.join('').length) {
+				this.position.copy(this.emitter.calculate(this.emitter.config.particle_motion_relative_position, params));
+			}
+			if (this.emitter.config.particle_motion_direction.join('').length) {
+				this.speed.copy(this.emitter.calculate(this.emitter.config.particle_motion_direction, params));
+			}
+		}
+
+		// Rotation
+		if (this.emitter.config.particle_rotation_mode === 'dynamic') {
 			var rot_drag = this.emitter.calculate(this.emitter.config.particle_rotation_rotation_drag_coefficient, params);
 			var rot_acceleration = this.emitter.calculate(this.emitter.config.particle_rotation_rotation_acceleration, params);
 				rot_acceleration += -rot_drag * this.rotation_rate;
 			this.rotation_rate += rot_acceleration*1/tick_rate;
 			this.rotation = MathUtil.degToRad(this.initial_rotation + this.rotation_rate*this.age);
-		} else if (!jump) {
-			if (this.emitter.config.particle_motion_relative_position.join('').length) {
-				this.position.copy(this.emitter.calculate(this.emitter.config.particle_motion_relative_position, params));
-			}
+
+		} else if (this.emitter.config.particle_rotation_mode === 'parametric') {
+
 			this.rotation = MathUtil.degToRad(this.emitter.calculate(this.emitter.config.particle_rotation_rotation, params));
 		}
+		
 
 		if (!jump) {
 			//Size
