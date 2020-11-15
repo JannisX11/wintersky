@@ -143,6 +143,38 @@ class Emitter {
 	updateMaterial() {
 		this.config.updateTexture();
 	}
+	updateFacingRotation(camera) {
+		this.particles.forEach(p => {
+
+			switch (this.config.particle_appearance_facing_camera_mode) {
+				case 'lookat_xyz':
+					p.mesh.lookAt(camera.position)
+					break;
+				case 'lookat_y':
+					var v = new THREE.Vector3().copy(camera.position);
+					dummy_vec.set(0, 0, 0);
+					p.mesh.localToWorld(dummy_vec);
+					v.y = dummy_vec.y;
+					p.mesh.lookAt(v);
+					break;
+				case 'rotate_xyz':
+					p.mesh.rotation.copy(camera.rotation);
+					break;
+				case 'rotate_y':
+					p.mesh.rotation.copy(camera.rotation);
+					p.mesh.rotation.reorder('YXZ');
+					p.mesh.rotation.x = p.mesh.rotation.z = 0;
+					break;
+				case 'direction':
+					var q = new THREE.Quaternion().setFromUnitVectors(Normals.z, p.speed)
+					p.mesh.rotation.setFromQuaternion(q);
+					break;
+			}
+			p.mesh.rotation.z += p.rotation||0;
+		})
+	}
+
+	// Controls
 	start() {
 		this.age = 0;
 		this.view_age = 0;
@@ -157,6 +189,7 @@ class Emitter {
 
 		for (var line of this.config.variables_creation_vars) {
 			let [key, value] = line.split(/\s*=(.+)/);
+			if (!value) continue;
 			value = value.replace(/^\s*=\s*/, '');
 			this.creation_values[key] = this.Molang.parse(value)
 		}
@@ -174,6 +207,7 @@ class Emitter {
 		// Calculate tick values
 		for (var line of this.config.variables_tick_vars) {
 			let [key, value] = line.split(/\s*=(.+)/);
+			if (!value) continue;
 			value = value.replace(/^\s*=\s*/, '');
 			this.tick_values[key] = this.Molang.parse(value)
 		}
@@ -221,22 +255,14 @@ class Emitter {
 		}
 		return this;
 	}
-	stop() {
+	stop(clear_particles = false) {
 		this.enabled = false;
 		this.age = 0;
-		return this;
-	}
-	play() {
-		if (!this.initialized) {
-			this.start();
+		if (clear_particles) {
+			this.particles.slice().forEach(particle => {
+				particle.remove();
+			});
 		}
-		this.tick_interval = setInterval(() => {
-			this.tick()
-		}, 1000/Wintersky.global_options.tick_rate)
-		return this;
-	}
-	pause() {
-		clearInterval(this.tick_interval);
 		return this;
 	}
 	jumpTo(second) {
@@ -248,11 +274,7 @@ class Emitter {
 		}
 		if (old_time == new_time) return;
 		if (new_time < old_time) {
-			this.stop();
-			this.particles.slice().forEach(particle => {
-				particle.remove();
-			});
-			this.start();
+			this.stop(true).start();
 		} else if (!this.initialized) {
 			this.start();
 		}
@@ -262,36 +284,37 @@ class Emitter {
 		this.tick(false);
 		return this;
 	}
-	updateFacingRotation(camera) {
-		this.particles.forEach(p => {
 
-			switch (this.config.particle_appearance_facing_camera_mode) {
-				case 'lookat_xyz':
-					p.mesh.lookAt(camera.position)
-					break;
-				case 'lookat_y':
-					var v = new THREE.Vector3().copy(camera.position);
-					dummy_vec.set(0, 0, 0);
-					p.mesh.localToWorld(dummy_vec);
-					v.y = dummy_vec.y;
-					p.mesh.lookAt(v);
-					break;
-				case 'rotate_xyz':
-					p.mesh.rotation.copy(camera.rotation);
-					break;
-				case 'rotate_y':
-					p.mesh.rotation.copy(camera.rotation);
-					p.mesh.rotation.reorder('YXZ');
-					p.mesh.rotation.x = p.mesh.rotation.z = 0;
-					break;
-				case 'direction':
-					var q = new THREE.Quaternion().setFromUnitVectors(Normals.z, p.speed)
-					p.mesh.rotation.setFromQuaternion(q);
-					break;
-			}
-			p.mesh.rotation.z += p.rotation||0;
-		})
+	// Playback Loop
+	playLoop() {
+		if (!this.initialized || this.age == 0) {
+			this.start();
+		}
+		this.paused = false;
+		clearInterval(this.tick_interval);
+		this.tick_interval = setInterval(() => {
+			this.tick()
+		}, 1000/Wintersky.global_options.tick_rate)
+		return this;
 	}
+	toggleLoop() {
+		this.paused = !this.paused;
+		if (this.paused) {
+			clearInterval(this.tick_interval);
+			delete this.tick_interval;
+		} else {
+			this.playLoop();
+		}
+		return this;
+	}
+	stopLoop() {
+		clearInterval(this.tick_interval);
+		delete this.tick_interval;
+		this.stop(true);
+		this.paused = true;
+		return this;
+	}
+	
 	spawnParticles(count) {
 		if (!count) return this;
 

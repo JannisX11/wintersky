@@ -311,7 +311,7 @@ class Particle {
 
 		vertex_uvs[1][0] = vertex_uvs[0][1];
 		vertex_uvs[1][2] = vertex_uvs[0][2];
-		this.geometry.uvsNeedUpdate = true
+		this.geometry.uvsNeedUpdate = true;
 	}
 }
 Wintersky.Particle = Particle;

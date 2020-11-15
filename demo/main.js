@@ -49,7 +49,7 @@ async function initializeApp() {
 	let content = await loadJSON('../examples/rainbow.particle.json');
 	View.emitter = new Wintersky.Emitter(content);
 	View.scene.add(Wintersky.space);
-	View.emitter.play();
+	View.emitter.playLoop();
 }
 
 function animate() {

@@ -2,7 +2,7 @@
   "name": "wintersky",
   "version": "0.0.1",
   "description": "Particle emitter for Minecraft bedrock particle effects",
-  "main": "src/entry.js",
+  "main": "dist/wintersky.cjs.js",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c --watch"

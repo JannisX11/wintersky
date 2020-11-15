@@ -1,5 +1,6 @@
 import tinycolor from 'tinycolor2'
 import Wintersky from './wintersky';
+import * as THREE from 'three';
 
 import MissingTex from '../assets/missing.png';
 import ParticlesTex from '../assets/particles.png';
@@ -28,6 +29,50 @@ class Config {
 		this.texture.magFilter = THREE.NearestFilter;
 		this.texture.minFilter = THREE.NearestFilter;
 
+		for (var key in Config.types) {
+			var type = Config.types[key];
+			var value;
+			switch (type.type) {
+				case 'string': value = ''; break;
+				case 'molang': value = ''; break;
+				case 'number': value = 0; break;
+				case 'boolean': value = false; break;
+				case 'color': value = '#ffffff'; break;
+				case 'object': value = {}; break;
+			}
+			if (type.array) {
+				this[key] = [];
+				if (type.dimensions) {
+					for (var i = 0; i < type.dimensions; i++) {
+						if (type.type == 'object') value = {};
+						this[key].push(value);
+					}
+				}
+			} else {
+				this[key] = value;
+			}
+		}
+		this.emitter_rate_mode = 'steady';
+		this.emitter_lifetime_mode = 'looping';
+		this.emitter_shape_mode = 'point';
+		this.particle_appearance_facing_camera_mode = 'rotate_xyz';
+		this.particle_appearance_material = 'particles_alpha';
+		this.particle_direction_mode = 'outwards';
+		this.particle_motion_mode = 'dynamic';
+		this.particle_rotation_mode = 'dynamic';
+		this.particle_texture_mode = 'static';
+		this.particle_lifetime_mode = 'time';
+		this.particle_color_mode = 'static';
+
+		this.emitter_rate_rate = '1';
+		this.emitter_rate_maximum = '100';
+		this.emitter_lifetime_active_time = '1';
+		this.particle_appearance_size = ['0.2', '0.2'];
+		this.particle_lifetime_max_lifetime = '1';
+		this.particle_texture_uv_size = ['16', '16'];
+
+
+		/*
 		this.identifier = '';
 		this.file_path = '';
 		this.curves = {};
@@ -36,39 +81,31 @@ class Config {
 		this.variables_creation_vars = [];
 		this.variables_tick_vars = [];
 
-		this.emitter_rate_mode = 'steady';
 		this.emitter_rate_rate = '';
 		this.emitter_rate_amount = '';
 		this.emitter_rate_maximum = '';
-		this.emitter_lifetime_mode = 'once';
 		this.emitter_lifetime_active_time = '';
 		this.emitter_lifetime_sleep_time = '';
 		this.emitter_lifetime_activation = '';
 		this.emitter_lifetime_expiration = '';
-		this.emitter_shape_mode = 'point';
 		this.emitter_shape_offset = [0, 0, 0];
 		this.emitter_shape_radius = '';
 		this.emitter_shape_half_dimensions = [0, 0, 0];
 		this.emitter_shape_plane_normal = [0, 0, 0];
 		this.emitter_shape_surface_only = false;
+
 		this.particle_appearance_size = [0, 0];
-		this.particle_appearance_facing_camera_mode = 'rotate_xyz';
-		this.particle_appearance_material = 'particles_alpha';
-		this.particle_direction_mode = 'outwards';
 		this.particle_direction_direction = [0, 0, 0];
-		this.particle_motion_mode = 'dynamic';
 		this.particle_motion_linear_speed = '';
 		this.particle_motion_linear_acceleration = [0, 0, 0];
 		this.particle_motion_linear_drag_coefficient = '';
 		this.particle_motion_relative_position = [];
 		this.particle_motion_direction = [];
-		this.particle_rotation_mode = 'dynamic';
 		this.particle_rotation_initial_rotation = '';
 		this.particle_rotation_rotation_rate = '';
 		this.particle_rotation_rotation_acceleration = '';
 		this.particle_rotation_rotation_drag_coefficient = '';
 		this.particle_rotation_rotation = '';
-		this.particle_lifetime_mode = 'time';
 		this.particle_lifetime_max_lifetime = '';
 		this.particle_lifetime_kill_plane = [0, 0, 0, 0];
 		this.particle_lifetime_expiration_expression = '';
@@ -77,8 +114,6 @@ class Config {
 		this.particle_texture_width = 0;
 		this.particle_texture_height = 0;
 		this.particle_texture_path = '';
-		this.particle_texture_image = '';
-		this.particle_texture_mode = 'static';
 		this.particle_texture_uv = [0, 0];
 		this.particle_texture_uv_size = [0, 0];
 		this.particle_texture_uv_step = [0, 0];
@@ -86,7 +121,6 @@ class Config {
 		this.particle_texture_max_frame = '';
 		this.particle_texture_stretch_to_lifetime = false;
 		this.particle_texture_loop = false;
-		this.particle_color_mode = 'static';
 		this.particle_color_static = '#ffffff';
 		this.particle_color_interpolant = '';
 		this.particle_color_range = 0;
@@ -98,19 +132,20 @@ class Config {
 		this.particle_collision_coefficient_of_restitution = 0;
 		this.particle_collision_collision_radius = 0;
 		this.particle_collision_expire_on_contact = false;
+		*/
 
 		return this;
 	}
 	set(key, val) {
-		if (this[key] == undefined || val == undefined || val == null) return;
+		if (Config.types[key] == undefined || val == undefined || val == null) return;
 
-		if (this[key] instanceof Array) {
+		if (Config.types[key].array) {
 			this[key].splice(0, Infinity, ...val);
 		} else if (typeof this[key] == 'string') {
 			this[key] = val.toString();
-		} else if (typeof this[key] == 'number' && typeof val == 'number') {
+		} else if (Config.types[key].type == 'number' && typeof val == 'number') {
 			this[key] = val;
-		} else if (typeof this[key] == 'boolean') {
+		} else if (Config.types[key].type == 'boolean') {
 			this[key] = !!val;
 		}
 		return this;
@@ -369,38 +404,119 @@ class Config {
 		return this;
 	}
 	updateTexture() {
-		var scope = this;
-		var url;
-		var path = this.particle_texture_path;
 
-		switch (path) {
-			case 'textures/particle/particles':
-				url = ParticlesTex;
-				break;
-			case 'textures/flame_atlas': case 'textures/particle/flame_atlas':
-				url = FlameAtlasTex;
-				break;
-			case 'textures/particle/soul':
-				url = SoulTex;
-				break;
-			case 'textures/particle/campfire_smoke':
-				url = CampfireSmokeTex;
-				break;
-			default:
-				url = MissingTex;
-				break;
+		let continueLoading = url => {
+			if (!url) {
+				switch (this.particle_texture_path) {
+					case 'textures/particle/particles':
+						url = ParticlesTex;
+						break;
+					case 'textures/flame_atlas': case 'textures/particle/flame_atlas':
+						url = FlameAtlasTex;
+						break;
+					case 'textures/particle/soul':
+						url = SoulTex;
+						break;
+					case 'textures/particle/campfire_smoke':
+						url = CampfireSmokeTex;
+						break;
+					default:
+						url = MissingTex;
+						break;
+				}
+			}
+			this.texture.image.src = url;
+			this.texture.image.onload = () => {
+				this.texture.needsUpdate = true;
+				this.particle_texture_width = this.texture.image.naturalWidth;
+				this.particle_texture_height = this.texture.image.naturalHeight;
+			}
 		}
-		if (url == MissingTex && typeof Wintersky.fetchTexture == 'function') {
+
+		if (typeof Wintersky.fetchTexture == 'function') {
 			let result = Wintersky.fetchTexture(this);
-			if (result) url = result;
-		}
-		this.texture.image.src = url;
-		this.texture.image.onload = () => {
-			this.texture.needsUpdate = true;
+			if (result instanceof Promise) {
+				result.then(result2 => {
+					continueLoading(result2);
+				});
+			} else {
+				continueLoading(result);
+			}
 		}
 		return this;
 	}
 }
+Config.types = {
+
+	identifier: {type: 'string'},
+	file_path: {type: 'string'},
+	curves: {type: 'object'},
+	space_local_position: {type: 'boolean'},
+	space_local_rotation: {type: 'boolean'},
+	variables_creation_vars: {type: 'string', array: true},
+	variables_tick_vars: {type: 'string', array: true},
+	emitter_rate_mode: {type: 'string'},
+	emitter_rate_rate: {type: 'molang'},
+	emitter_rate_amount: {type: 'molang'},
+	emitter_rate_maximum: {type: 'molang'},
+	emitter_lifetime_mode: {type: 'string'},
+	emitter_lifetime_active_time: {type: 'molang'},
+	emitter_lifetime_sleep_time: {type: 'molang'},
+	emitter_lifetime_activation: {type: 'molang'},
+	emitter_lifetime_expiration: {type: 'molang'},
+	emitter_shape_mode: {type: 'string'},
+	emitter_shape_offset: {type: 'molang', array: true, dimensions: 3},
+	emitter_shape_radius: {type: 'molang'},
+	emitter_shape_half_dimensions: {type: 'molang', array: true, dimensions: 3},
+	emitter_shape_plane_normal: {type: 'molang', array: true, dimensions: 3},
+	emitter_shape_surface_only: {type: 'boolean'},
+	particle_appearance_size: {type: 'molang', array: true, dimensions: 2},
+	particle_appearance_facing_camera_mode: {type: 'string'},
+	particle_appearance_material: {type: 'string'},
+	particle_direction_mode: {type: 'string'},
+	particle_direction_direction: {type: 'molang', array: true, dimensions: 3},
+	particle_motion_mode: {type: 'string'},
+	particle_motion_linear_speed: {type: 'molang'},
+	particle_motion_linear_acceleration: {type: 'molang', array: true, dimensions: 3},
+	particle_motion_linear_drag_coefficient: {type: 'molang'},
+	particle_motion_relative_position: {type: 'molang', array: true, dimensions: 3},
+	particle_motion_direction: {type: 'molang', array: true, dimensions: 3},
+	particle_rotation_mode: {type: 'string'},
+	particle_rotation_initial_rotation: {type: 'molang'},
+	particle_rotation_rotation_rate: {type: 'molang'},
+	particle_rotation_rotation_acceleration: {type: 'molang'},
+	particle_rotation_rotation_drag_coefficient: {type: 'molang'},
+	particle_rotation_rotation: {type: 'molang'},
+	particle_lifetime_mode: {type: 'string'},
+	particle_lifetime_max_lifetime: {type: 'molang'},
+	particle_lifetime_kill_plane: {type: 'molang', array: true, dimensions: 4},
+	particle_lifetime_expiration_expression: {type: 'molang'},
+	particle_lifetime_expire_in: {type: 'string', array: true},
+	particle_lifetime_expire_outside: {type: 'string', array: true},
+	particle_texture_width: {type: 'number'},
+	particle_texture_height: {type: 'number'},
+	particle_texture_path: {type: 'string'},
+	particle_texture_mode: {type: 'string'},
+	particle_texture_uv: {type: 'molang', array: true, dimensions: 2},
+	particle_texture_uv_size: {type: 'molang', array: true, dimensions: 2},
+	particle_texture_uv_step: {type: 'molang', array: true, dimensions: 2},
+	particle_texture_frames_per_second: {type: 'number'},
+	particle_texture_max_frame: {type: 'molang'},
+	particle_texture_stretch_to_lifetime: {type: 'boolean'},
+	particle_texture_loop: {type: 'boolean'},
+	particle_color_mode: {type: 'string'},
+	particle_color_static: {type: 'color'},
+	particle_color_interpolant: {type: 'molang'},
+	particle_color_range: {type: 'number'},
+	particle_color_gradient: {type: 'object', array: true},
+	particle_color_expression: {type: 'molang', array: true, dimensions: 3},
+	particle_color_light: {type: 'boolean'},
+	particle_collision_enabled: {type: 'boolean'},
+	particle_collision_collision_drag: {type: 'number'},
+	particle_collision_coefficient_of_restitution: {type: 'number'},
+	particle_collision_collision_radius: {type: 'number'},
+	particle_collision_expire_on_contact: {type: 'boolean'},
+};
 Wintersky.Config = Config;
 
 export default Config;
