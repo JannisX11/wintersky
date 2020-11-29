@@ -55,7 +55,16 @@ function parseColor(input) {
 class Config {
 	constructor(config, options = 0) {
 		this.texture = new THREE.Texture(new Image());
+		this.texture.image.onload = () => {
+			this.texture.needsUpdate = true;
+			this.particle_texture_width = this.texture.image.naturalWidth;
+			this.particle_texture_height = this.texture.image.naturalHeight;
+			if (typeof this.onTextureUpdate == 'function') {
+				this.onTextureUpdate();
+			}
+		};
 		this.reset();
+		this.onTextureUpdate = null;
 
 		if (config && config.particle_effect) {
 			this.setFromJSON(config);
@@ -110,69 +119,6 @@ class Config {
 		this.particle_appearance_size = ['0.2', '0.2'];
 		this.particle_lifetime_max_lifetime = '1';
 		this.particle_texture_uv_size = ['16', '16'];
-
-
-		/*
-		this.identifier = '';
-		this.file_path = '';
-		this.curves = {};
-		this.space_local_position = false;
-		this.space_local_rotation = false;
-		this.variables_creation_vars = [];
-		this.variables_tick_vars = [];
-
-		this.emitter_rate_rate = '';
-		this.emitter_rate_amount = '';
-		this.emitter_rate_maximum = '';
-		this.emitter_lifetime_active_time = '';
-		this.emitter_lifetime_sleep_time = '';
-		this.emitter_lifetime_activation = '';
-		this.emitter_lifetime_expiration = '';
-		this.emitter_shape_offset = [0, 0, 0];
-		this.emitter_shape_radius = '';
-		this.emitter_shape_half_dimensions = [0, 0, 0];
-		this.emitter_shape_plane_normal = [0, 0, 0];
-		this.emitter_shape_surface_only = false;
-
-		this.particle_appearance_size = [0, 0];
-		this.particle_direction_direction = [0, 0, 0];
-		this.particle_motion_linear_speed = '';
-		this.particle_motion_linear_acceleration = [0, 0, 0];
-		this.particle_motion_linear_drag_coefficient = '';
-		this.particle_motion_relative_position = [];
-		this.particle_motion_direction = [];
-		this.particle_rotation_initial_rotation = '';
-		this.particle_rotation_rotation_rate = '';
-		this.particle_rotation_rotation_acceleration = '';
-		this.particle_rotation_rotation_drag_coefficient = '';
-		this.particle_rotation_rotation = '';
-		this.particle_lifetime_max_lifetime = '';
-		this.particle_lifetime_kill_plane = [0, 0, 0, 0];
-		this.particle_lifetime_expiration_expression = '';
-		this.particle_lifetime_expire_in = [];
-		this.particle_lifetime_expire_outside = [];
-		this.particle_texture_width = 0;
-		this.particle_texture_height = 0;
-		this.particle_texture_path = '';
-		this.particle_texture_uv = [0, 0];
-		this.particle_texture_uv_size = [0, 0];
-		this.particle_texture_uv_step = [0, 0];
-		this.particle_texture_frames_per_second = 0;
-		this.particle_texture_max_frame = '';
-		this.particle_texture_stretch_to_lifetime = false;
-		this.particle_texture_loop = false;
-		this.particle_color_static = '#ffffff';
-		this.particle_color_interpolant = '';
-		this.particle_color_range = 0;
-		this.particle_color_gradient = [];
-		this.particle_color_expression = [];
-		this.particle_color_light = false;
-		this.particle_collision_enabled = false;
-		this.particle_collision_collision_drag = 0;
-		this.particle_collision_coefficient_of_restitution = 0;
-		this.particle_collision_collision_radius = 0;
-		this.particle_collision_expire_on_contact = false;
-		*/
 
 		return this;
 	}
@@ -491,11 +437,6 @@ class Config {
 				}
 			}
 			this.texture.image.src = url;
-			this.texture.image.onload = () => {
-				this.texture.needsUpdate = true;
-				this.particle_texture_width = this.texture.image.naturalWidth;
-				this.particle_texture_height = this.texture.image.naturalHeight;
-			};
 		};
 
 		if (typeof Wintersky.fetchTexture == 'function') {
