@@ -121,6 +121,10 @@ Loads the configuration from a JSON particle file
 
 * `json: Object` Particle file content
 
+### Config#onTextureUpdate()
+
+Method that runs when the texture of the config is updated. Null by default
+
 
 &nbsp;
 ## Wintersky
