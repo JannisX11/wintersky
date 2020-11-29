@@ -1,4 +1,5 @@
-# Wintersky
+# Wintersky [![npm version](https://img.shields.io/npm/v/wintersky)](https://www.npmjs.com/package/wintersky)
+
 Particle effect renderer based on [three.js](https://threejs.org) and the [Minecraft Bedrock particle format](https://bedrock.dev/docs/stable/Particles).
 
 * Demo: [Wintersky Rainbow Demo](https://jannisx11.github.io/wintersky/demo/)

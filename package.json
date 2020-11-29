@@ -1,7 +1,7 @@
 {
   "name": "wintersky",
-  "version": "0.1.0",
-  "description": "Particle emitter for Minecraft bedrock particle effects",
+  "version": "0.1.1",
+  "description": "Particle effect renderer based on three.js and the Minecraft Bedrock particle format",
   "main": "dist/wintersky.cjs.js",
   "scripts": {
     "build": "rollup -c",
