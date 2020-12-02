@@ -217,7 +217,7 @@ class Particle {
 				}
 			}
 
-		} else if (this.emitter.config.particle_motion_mode === 'dynamic' && !jump) {
+		} else if (this.emitter.config.particle_motion_mode === 'parametric' && !jump) {
 			if (this.emitter.config.particle_motion_relative_position.join('').length) {
 				this.position.copy(this.emitter.calculate(this.emitter.config.particle_motion_relative_position, params));
 			}

@@ -477,7 +477,7 @@ Config.types = {
 	particle_color_interpolant: {type: 'molang'},
 	particle_color_range: {type: 'number'},
 	particle_color_gradient: {type: 'object', array: true},
-	particle_color_expression: {type: 'molang', array: true, dimensions: 3},
+	particle_color_expression: {type: 'molang', array: true, dimensions: 4},
 	particle_color_light: {type: 'boolean'},
 	particle_collision_enabled: {type: 'molang'},
 	particle_collision_collision_drag: {type: 'number'},
