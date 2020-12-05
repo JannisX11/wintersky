@@ -1,8 +1,10 @@
 {
   "name": "wintersky",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Particle effect renderer based on three.js and the Minecraft Bedrock particle format",
   "main": "dist/wintersky.cjs.js",
+  "module": "dist/wintersky.esm.js",
+  "types": "types/index.d.ts",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c --watch"
@@ -16,6 +18,12 @@
   "bugs": {
     "url": "https://github.com/JannisX11/wintersky/issues"
   },
+  "files": [
+    "dist/*.js",
+    "src",
+    "assets",
+    "types/*.ts"
+  ],
   "homepage": "https://github.com/JannisX11/wintersky#readme",
   "devDependencies": {
     "@rollup/plugin-image": "^2.0.5",
