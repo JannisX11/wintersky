@@ -149,6 +149,7 @@ class Config {
 			if (comp('emitter_local_space')) {
 				this.space_local_position = comp('emitter_local_space').position;
 				this.space_local_rotation = comp('emitter_local_space').rotation;
+				this.space_local_velocity = comp('emitter_local_space').velocity;
 			}
 			if (comp('emitter_rate_steady')) {
 				this.set('emitter_rate_mode',  'steady');
@@ -331,7 +332,7 @@ class Config {
 				var c = comp('particle_appearance_tinting').color
 
 				if (c instanceof Array && c.length >= 3) {
-					if ((typeof c[0] + typeof c[1] + typeof c[1]).includes('string')) {
+					if ((typeof c[0] + typeof c[1] + typeof c[2] + typeof c[3]).includes('string')) {
 						this.set('particle_color_mode', 'expression');
 						this.set('particle_color_expression', c);
 
@@ -342,7 +343,7 @@ class Config {
 							r: c[0] * 255,
 							g: c[1] * 255,
 							b: c[2] * 255,
-							b: c[3],
+							a: c[3],
 						}).toHex8String();
 						this.set('particle_color_static', color);
 					}
@@ -425,6 +426,7 @@ Config.types = {
 	curves: {type: 'object'},
 	space_local_position: {type: 'boolean'},
 	space_local_rotation: {type: 'boolean'},
+	space_local_velocity: {type: 'boolean'},
 	variables_creation_vars: {type: 'string', array: true},
 	variables_tick_vars: {type: 'string', array: true},
 	emitter_rate_mode: {type: 'string'},
