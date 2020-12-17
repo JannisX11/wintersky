@@ -6,7 +6,11 @@ import Config from './config';
 import Particle from './particle';
 import {MathUtil, Normals, removeFromArray} from './util';
 
+import vertexShader from './shaders/vertex.glsl'
+import fragmentShader from './shaders/fragment.glsl'
+
 const dummy_vec = new THREE.Vector3();
+const materialTypes = ['particles_alpha', 'particles_blend', 'particles_opaque']
 
 function calculateCurve(emitter, curve, params) {
 
@@ -59,12 +63,22 @@ class Emitter {
 		this.local_space.scale.set(global_scale, global_scale, global_scale);
 		this.global_space = new THREE.Object3D();
 		this.global_space.scale.set(global_scale, global_scale, global_scale);
-		this.material = new THREE.MeshBasicMaterial({
-			color: 0xffffff,
-			transparent: true,
+		this.material = new THREE.ShaderMaterial({
+			uniforms: {
+				map: {
+					type: 't',
+					value: this.config.texture
+				},
+				materialType: {
+					type: 'int',
+					value: 1
+				}
+			},
+			vertexShader,
+			fragmentShader,
 			vertexColors: THREE.FaceColors,
-			alphaTest: 0.2,
-			map: this.config.texture
+			transparent: true,
+			alphaTest: 0.2
 		});
 
 		this.particles = [];
@@ -222,6 +236,10 @@ class Emitter {
 				p_this_tick = Math.floor(p_this_tick)
 			}
 			this.spawnParticles(p_this_tick)
+		}
+		// Material
+		if (!jump) {
+			this.material.uniforms.materialType.value = materialTypes.indexOf(this.config.particle_appearance_material)
 		}
 		// Tick particles
 		this.particles.forEach(p => {

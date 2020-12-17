@@ -79,7 +79,7 @@ interface ConfigOptions {
 	path: string
 }
 
-export class Config extends ConfigVariables {
+export class Config {
 	constructor(config?: Config | object, options: ConfigOptions): void
 
 	texture: THREE.Texture

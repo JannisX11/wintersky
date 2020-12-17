@@ -5,7 +5,7 @@
 			"identifier": "snowstorm:fire",
 			"basic_render_parameters": {
 				"material": "particles_alpha",
-				"texture": "textures/particle/flame_atlas"
+				"texture": "textures/flame_atlas"
 			}
 		},
 		"components": {

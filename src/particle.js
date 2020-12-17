@@ -4,6 +4,7 @@ import tinycolor from 'tinycolor2';
 import {MathUtil, Normals, removeFromArray} from './util';
 import Wintersky from './wintersky';
 
+const defaultColor = {r: 255, r: 255, b: 255, a: 1};
 
 function calculateGradient(gradient, percent) {
 	let index = 0;
@@ -11,20 +12,19 @@ function calculateGradient(gradient, percent) {
 		if (point.percent <= percent) index = i;
 	});
 	if (gradient[index] && !gradient[index+1]) {
-		var color = gradient[index].color;
+		return tinycolor(gradient[index].color).toRgb();
 
 	} else if (!gradient[index] && gradient[index+1]) {
-		var color = gradient[index+1].color;
+		return tinycolor(gradient[index+1].color).toRgb();
 
 	} else if (gradient[index] && gradient[index+1]) {
 		// Interpolate
 		var mix = (percent - gradient[index].percent) / (gradient[index+1].percent - gradient[index].percent)
-		var color = tinycolor.mix(gradient[index].color, gradient[index+1].color, mix*100).toHexString()
+		return tinycolor.mix(gradient[index].color, gradient[index+1].color, mix*100).toRgb()
 
 	} else {
-		var color = '#ffffff'
+		return defaultColor;
 	}
-	return new THREE.Color(color);
 }
 
 
@@ -33,10 +33,13 @@ class Particle {
 		this.emitter = emitter;
 		if (!data) data = 0;
 
-		this.geometry = new THREE.PlaneGeometry(1, 1)
+		this.geometry = new THREE.PlaneBufferGeometry(2, 2)
 		this.material = this.emitter.material;
 		this.mesh = new THREE.Mesh(this.geometry, this.material)
 		this.position = this.mesh.position;
+		
+		let colors = new Float32Array(16).fill(1);
+		this.geometry.setAttribute('clr', new THREE.BufferAttribute(colors, 4));
 
 		this.speed = data.speed||new THREE.Vector3();
 		this.acceleration = data.acceleration||new THREE.Vector3();
@@ -224,6 +227,12 @@ class Particle {
 			if (this.emitter.config.particle_motion_direction.join('').length) {
 				this.speed.copy(this.emitter.calculate(this.emitter.config.particle_motion_direction, params));
 			}
+			if (this.emitter.config.space_local_position) {
+				if (this.emitter.parent_mode == 'locator') {
+					this.position.x *= -1;
+					this.position.y *= -1;
+				}
+			}
 		}
 
 		// Rotation
@@ -243,8 +252,8 @@ class Particle {
 		if (!jump) {
 			//Size
 			var size = this.emitter.calculate(this.emitter.config.particle_appearance_size, params);
-			this.mesh.scale.x = size.x*2.25 || 0.0001;
-			this.mesh.scale.y = size.y*2.25 || 0.0001;
+			this.mesh.scale.x = size.x || 0.0001;
+			this.mesh.scale.y = size.y || 0.0001;
 
 
 			//UV
@@ -280,11 +289,11 @@ class Particle {
 				var i = this.emitter.calculate(this.emitter.config.particle_color_interpolant, params)
 				var r = this.emitter.calculate(this.emitter.config.particle_color_range, params)
 				var c = calculateGradient(this.emitter.config.particle_color_gradient, (i/r) * 100)
-				this.setColor(c.r, c.g, c.b);
+				this.setColor(c.r/255, c.g/255, c.b/255, c.a);
 
 			} else {
 				var c = tinycolor(this.emitter.config.particle_color_static).toRgb();
-				this.setColor(c.r/255, c.g/255, c.b/255);
+				this.setColor(c.r/255, c.g/255, c.b/255, c.a);
 			}
 		}
 
@@ -296,11 +305,15 @@ class Particle {
 		this.emitter.dead_particles.push(this);
 		return this;
 	}
-	setColor(r, g, b) {
-		this.mesh.geometry.faces.forEach(face => {
-			face.color.setRGB(r, g, b)
-		})
-		this.mesh.geometry.colorsNeedUpdate = true;
+	setColor(r, g, b, a = 1) {
+		let attribute = this.geometry.getAttribute('clr');
+		attribute.array.set([
+			r, g, b, a,
+			r, g, b, a,
+			r, g, b, a,
+			r, g, b, a,
+		]);
+		attribute.needsUpdate = true;
 	}
 	setFrame(n) {
 		var params = this.params()
@@ -314,21 +327,20 @@ class Particle {
 	}
 	setUV(x, y, w, h) {
 		var epsilon = 0.05
-		var vertex_uvs = this.geometry.faceVertexUvs[0]
+		let attribute = this.geometry.getAttribute('uv');
 
 		w = (x+w - 2*epsilon) / this.emitter.config.particle_texture_width;
 		h = (y+h - 2*epsilon) / this.emitter.config.particle_texture_height;
 		x = (x + (w>0 ? epsilon : -epsilon)) / this.emitter.config.particle_texture_width;
 		y = (y + (h>0 ? epsilon : -epsilon)) / this.emitter.config.particle_texture_height;
 
-		vertex_uvs[0][0].set(x, 1-y)
-		vertex_uvs[0][1].set(x, 1-h)
-		vertex_uvs[0][2].set(w, 1-y)
-		vertex_uvs[1][1].set(w, 1-h)
-
-		vertex_uvs[1][0] = vertex_uvs[0][1];
-		vertex_uvs[1][2] = vertex_uvs[0][2];
-		this.geometry.uvsNeedUpdate = true;
+		attribute.array.set([
+			x, 1-y,
+			w, 1-y,
+			x, 1-h,
+			w, 1-h,
+		]);
+		attribute.needsUpdate = true;
 	}
 }
 Wintersky.Particle = Particle;

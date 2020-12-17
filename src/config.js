@@ -9,7 +9,7 @@ import SoulTex from '../assets/soul.png';
 import CampfireSmokeTex from '../assets/campfire_smoke.png';
 
 function parseColor(input) {
-	return new tinycolor(input).toHexString();
+	return new tinycolor(input).toHex8String();
 }
 
 class Config {
@@ -85,7 +85,10 @@ class Config {
 	set(key, val) {
 		if (Config.types[key] == undefined || val == undefined || val == null) return;
 
-		if (Config.types[key].array) {
+		if (Config.types[key].array && val instanceof Array) {
+			if (Config.types[key].type == 'molang') {
+				val = val.map(v => v.toString());
+			}
 			this[key].splice(0, Infinity, ...val);
 		} else if (typeof this[key] == 'string') {
 			this[key] = val.toString();
@@ -115,8 +118,8 @@ class Config {
 				var new_curve = {
 					id: key,
 					mode: json_curve.type,
-					input: json_curve.input,
-					range: json_curve.horizontal_range,
+					input: (json_curve.input || 0).toString(),
+					range: (json_curve.horizontal_range || 0).toString(),
 					nodes: []
 				};
 				if (json_curve.nodes && json_curve.nodes.length) {
@@ -339,7 +342,8 @@ class Config {
 							r: c[0] * 255,
 							g: c[1] * 255,
 							b: c[2] * 255,
-						}).toHexString();
+							b: c[3],
+						}).toHex8String();
 						this.set('particle_color_static', color);
 					}
 				} else if (typeof c == 'object') {
@@ -359,7 +363,7 @@ class Config {
 						for (var time in c.gradient) {
 							max_time = Math.max(parseFloat(time), max_time)
 						}
-						this.particle_color_range = max_time;
+						this.set('particle_color_range', max_time);
 						for (var time in c.gradient) {
 							var color = parseColor(c.gradient[time]);
 							var percent = (parseFloat(time) / max_time) * 100;
@@ -457,7 +461,7 @@ Config.types = {
 	particle_rotation_rotation: {type: 'molang'},
 	particle_lifetime_mode: {type: 'string'},
 	particle_lifetime_max_lifetime: {type: 'molang'},
-	particle_lifetime_kill_plane: {type: 'molang', array: true, dimensions: 4},
+	particle_lifetime_kill_plane: {type: 'number', array: true, dimensions: 4},
 	particle_lifetime_expiration_expression: {type: 'molang'},
 	particle_lifetime_expire_in: {type: 'string', array: true},
 	particle_lifetime_expire_outside: {type: 'string', array: true},

@@ -1,4 +1,5 @@
 import image from '@rollup/plugin-image';
+import glslify from 'rollup-plugin-glslify';
 import { terser } from "rollup-plugin-terser";
 
 const production = !process.env.ROLLUP_WATCH;
@@ -28,6 +29,7 @@ export default {
 	external: ['molangjs', 'three', 'tinycolor2'],
 	plugins: [
 		image(),
+		glslify(),
 		production && terser()
 	]
 }
