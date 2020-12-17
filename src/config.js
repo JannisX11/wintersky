@@ -9,7 +9,14 @@ import SoulTex from '../assets/soul.png';
 import CampfireSmokeTex from '../assets/campfire_smoke.png';
 
 function parseColor(input) {
-	return new tinycolor(input).toHex8String();
+	if (typeof input == 'string' && input[0] == '#') {
+		if (input.length < 9) {
+			input = '#ff' + input.substr(1, 6);
+		}
+	} else {
+		input = new tinycolor(input).toHex8String();
+	}
+	return '#' + input.substr(3, 6) + input.substr(1, 2);
 }
 
 class Config {
@@ -331,7 +338,10 @@ class Config {
 			if (comp('particle_appearance_tinting')) {
 				var c = comp('particle_appearance_tinting').color
 
-				if (c instanceof Array && c.length >= 3) {
+				if (typeof c == 'string') {
+					this.set('particle_color_static', parseColor(c));
+
+				} else if (c instanceof Array && c.length >= 3) {
 					if ((typeof c[0] + typeof c[1] + typeof c[2] + typeof c[3]).includes('string')) {
 						this.set('particle_color_mode', 'expression');
 						this.set('particle_color_expression', c);

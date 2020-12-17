@@ -5,6 +5,7 @@ import {MathUtil, Normals, removeFromArray} from './util';
 import Wintersky from './wintersky';
 
 const defaultColor = {r: 255, r: 255, b: 255, a: 1};
+const collisionPlane = new THREE.Plane().setComponents(0, 1, 0, 0);
 
 function calculateGradient(gradient, percent) {
 	let index = 0;
@@ -29,9 +30,8 @@ function calculateGradient(gradient, percent) {
 
 
 class Particle {
-	constructor(emitter, data) {
+	constructor(emitter) {
 		this.emitter = emitter;
-		if (!data) data = 0;
 
 		this.geometry = new THREE.PlaneBufferGeometry(2, 2)
 		this.material = this.emitter.material;
@@ -41,8 +41,8 @@ class Particle {
 		let colors = new Float32Array(16).fill(1);
 		this.geometry.setAttribute('clr', new THREE.BufferAttribute(colors, 4));
 
-		this.speed = data.speed||new THREE.Vector3();
-		this.acceleration = data.acceleration||new THREE.Vector3();
+		this.speed = new THREE.Vector3();
+		this.acceleration = new THREE.Vector3();
 
 		this.add()
 	}
@@ -129,7 +129,7 @@ class Particle {
 			}
 		}
 		//Speed
-		this.speed = new THREE.Vector3()
+		this.speed.set(0, 0, 0);
 		var dir = this.emitter.config.particle_direction_mode;
 		if (dir == 'inwards' || dir == 'outwards') {
 
@@ -179,11 +179,11 @@ class Particle {
 	}
 	tick(jump) {
 		var params = this.params()
-		let {tick_rate} = Wintersky.global_options;
+		let step = 1 / Wintersky.global_options.tick_rate;
 
 		//Lifetime
-		this.age += 1/tick_rate;
-		this.loop_time += 1/tick_rate;
+		this.age += step;
+		this.loop_time += step;
 		if (this.emitter.config.particle_lifetime_mode === 'time') {
 			if (this.age > this.lifetime) {
 				this.remove();
@@ -197,7 +197,7 @@ class Particle {
 		if (this.emitter.config.particle_motion_mode === 'dynamic') {
 			//Position
 			var drag = this.emitter.calculate(this.emitter.config.particle_motion_linear_drag_coefficient, params);
-			this.acceleration = this.emitter.calculate(this.emitter.config.particle_motion_linear_acceleration, params);
+			this.acceleration.copy(this.emitter.calculate(this.emitter.config.particle_motion_linear_acceleration, params));
 			if (this.emitter.config.space_local_position) {
 				if (this.emitter.parent_mode == 'locator') {
 					this.acceleration.x *= -1;
@@ -208,15 +208,50 @@ class Particle {
 				this.acceleration.z *= -1;
 			}
 			this.acceleration.addScaledVector(this.speed, -drag)
-			this.speed.addScaledVector(this.acceleration, 1/tick_rate);
-			this.position.addScaledVector(this.speed, 1/tick_rate);
+			this.speed.addScaledVector(this.acceleration, step);
+			this.position.addScaledVector(this.speed, step);
 
-			if (this.emitter.config.particle_lifetime_kill_plane.join('')) {
+			if (this.emitter.config.particle_lifetime_kill_plane.find(v => v)) {
+				// Kill Plane
 				var plane = this.emitter.calculate(this.emitter.config.particle_lifetime_kill_plane, params);
-				var start_point = new THREE.Vector3().copy(this.position).addScaledVector(this.speed, -1/30);
+				var start_point = new THREE.Vector3().copy(this.position).addScaledVector(this.speed, -step);
 				var line = new THREE.Line3(start_point, this.position)
 				if (plane.intersectsLine(line)) {
 					this.remove();
+					return this;
+				}
+			}
+			if (
+				(!this.emitter.config.particle_collision_enabled && this.emitter.config.particle_collision_collision_radius)
+				|| this.emitter.calculate(this.emitter.config.particle_collision_enabled, params)
+			) {
+				// Collision
+				let drag = this.emitter.config.particle_collision_collision_drag;
+				let bounce = this.emitter.config.particle_collision_coefficient_of_restitution;
+				let radius = this.emitter.config.particle_collision_collision_radius;
+
+				let plane = collisionPlane;
+				let sphere = new THREE.Sphere(this.position, radius);
+				let previous_pos = new THREE.Vector3().copy(this.position).addScaledVector(this.speed, -step);
+				let line = new THREE.Line3(previous_pos, this.position);
+
+				let intersects_line = plane.intersectsLine(line)
+				if (intersects_line) {
+					plane.intersectLine(line, this.position);
+				}
+
+				if (intersects_line || plane.intersectsSphere(sphere)) {
+					// Collide
+					if (this.emitter.config.particle_collision_expire_on_contact) {
+						this.remove();
+						return this;
+					}
+					this.position.y = radius * Math.sign(previous_pos.y)
+
+					this.speed.reflect(plane.normal);
+					this.speed.y *= bounce;
+					this.speed.x = Math.sign(this.speed.x) * MathUtil.clamp(Math.abs(this.speed.x) - drag * step, 0, Infinity);
+					this.speed.z = Math.sign(this.speed.z) * MathUtil.clamp(Math.abs(this.speed.z) - drag * step, 0, Infinity);
 				}
 			}
 
@@ -240,7 +275,7 @@ class Particle {
 			var rot_drag = this.emitter.calculate(this.emitter.config.particle_rotation_rotation_drag_coefficient, params)
 			var rot_acceleration = this.emitter.calculate(this.emitter.config.particle_rotation_rotation_acceleration, params)
 				rot_acceleration += -rot_drag * this.rotation_rate;
-			this.rotation_rate += rot_acceleration*1/tick_rate;
+			this.rotation_rate += rot_acceleration*step;
 			this.rotation = MathUtil.degToRad(this.initial_rotation + this.rotation_rate*this.age);
 
 		} else if (this.emitter.config.particle_rotation_mode === 'parametric') {
