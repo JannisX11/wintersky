@@ -358,16 +358,16 @@ class Particle {
 			var offset = this.emitter.calculate(this.emitter.config.particle_texture_uv_step, params)
 			uv.addScaledVector(offset, n)
 		}
-		this.setUV(uv.x, uv.y, size.x||this.emitter.config.particle_texture_width, size.y||this.emitter.config.particle_texture_height)
+		this.setUV(uv.x, uv.y, size.x||this.emitter.config.particle_texture_size[0], size.y||this.emitter.config.particle_texture_size[1])
 	}
 	setUV(x, y, w, h) {
 		var epsilon = 0.05
 		let attribute = this.geometry.getAttribute('uv');
 
-		w = (x+w - 2*epsilon) / this.emitter.config.particle_texture_width;
-		h = (y+h - 2*epsilon) / this.emitter.config.particle_texture_height;
-		x = (x + (w>0 ? epsilon : -epsilon)) / this.emitter.config.particle_texture_width;
-		y = (y + (h>0 ? epsilon : -epsilon)) / this.emitter.config.particle_texture_height;
+		w = (x+w - 2*epsilon) / this.emitter.config.particle_texture_size[0];
+		h = (y+h - 2*epsilon) / this.emitter.config.particle_texture_size[1];
+		x = (x + (w>0 ? epsilon : -epsilon)) / this.emitter.config.particle_texture_size[0];
+		y = (y + (h>0 ? epsilon : -epsilon)) / this.emitter.config.particle_texture_size[1];
 
 		attribute.array.set([
 			x, 1-y,

@@ -24,8 +24,6 @@ class Config {
 		this.texture = new THREE.Texture(new Image());
 		this.texture.image.onload = () => {
 			this.texture.needsUpdate = true;
-			this.particle_texture_width = this.texture.image.naturalWidth;
-			this.particle_texture_height = this.texture.image.naturalHeight;
 			if (typeof this.onTextureUpdate == 'function') {
 				this.onTextureUpdate();
 			}
@@ -85,7 +83,7 @@ class Config {
 		this.emitter_lifetime_active_time = '1';
 		this.particle_appearance_size = ['0.2', '0.2'];
 		this.particle_lifetime_max_lifetime = '1';
-		this.particle_texture_uv_size = ['16', '16'];
+		this.particle_texture_size = [16, 16];
 
 		return this;
 	}
@@ -314,8 +312,9 @@ class Config {
 				this.set('particle_appearance_facing_camera_mode', comp('particle_appearance_billboard').facing_camera_mode);
 				var uv_tag = comp('particle_appearance_billboard').uv;
 				if (uv_tag) {
-					if (uv_tag.texture_width) this.set('particle_texture_width', uv_tag.texture_width);
-					if (uv_tag.texture_height) this.set('particle_texture_height', uv_tag.texture_height);
+					if (uv_tag.texture_width) {
+						this.set('particle_texture_size', [uv_tag.texture_width, uv_tag.texture_height]);
+					}
 					if (uv_tag.flipbook) {
 						this.set('particle_texture_mode', 'animated');
 						this.set('particle_texture_uv', uv_tag.flipbook.base_UV);
@@ -477,7 +476,7 @@ Config.types = {
 	particle_lifetime_expiration_expression: {type: 'molang'},
 	particle_lifetime_expire_in: {type: 'string', array: true},
 	particle_lifetime_expire_outside: {type: 'string', array: true},
-	particle_texture_width: {type: 'number'},
+	particle_texture_size: {type: 'number', array: true, dimensions: 2},
 	particle_texture_height: {type: 'number'},
 	particle_texture_path: {type: 'string'},
 	particle_texture_mode: {type: 'string'},
