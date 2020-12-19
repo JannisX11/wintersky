@@ -158,6 +158,8 @@ class Emitter {
 		this.config.updateTexture();
 	}
 	updateFacingRotation(camera) {
+		const quat = new THREE.Quaternion();
+		const vec = new THREE.Vector3();
 		this.particles.forEach(p => {
 
 			switch (this.config.particle_appearance_facing_camera_mode) {
@@ -165,7 +167,7 @@ class Emitter {
 					p.mesh.lookAt(camera.position)
 					break;
 				case 'lookat_y':
-					var v = new THREE.Vector3().copy(camera.position);
+					var v = vec.copy(camera.position);
 					dummy_vec.set(0, 0, 0);
 					p.mesh.localToWorld(dummy_vec);
 					v.y = dummy_vec.y;
@@ -179,8 +181,16 @@ class Emitter {
 					p.mesh.rotation.reorder('YXZ');
 					p.mesh.rotation.x = p.mesh.rotation.z = 0;
 					break;
-				case 'direction':
-					var q = new THREE.Quaternion().setFromUnitVectors(Normals.z, p.speed)
+				case 'direction_x':
+					var q = quat.setFromUnitVectors(Normals.x, vec.copy(p.speed).normalize())
+					p.mesh.rotation.setFromQuaternion(q);
+					break;
+				case 'direction_y':
+					var q = quat.setFromUnitVectors(Normals.y, vec.copy(p.speed).normalize())
+					p.mesh.rotation.setFromQuaternion(q);
+					break;
+				case 'direction_z':
+					var q = quat.setFromUnitVectors(Normals.z, vec.copy(p.speed).normalize())
 					p.mesh.rotation.setFromQuaternion(q);
 					break;
 			}

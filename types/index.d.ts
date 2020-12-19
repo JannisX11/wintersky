@@ -1,4 +1,4 @@
-type molang = string | number;
+type molang = string;
 
 interface ConfigVariables {
 	identifier: string
@@ -6,8 +6,9 @@ interface ConfigVariables {
 	curves: object
 	space_local_position: boolean
 	space_local_rotation: boolean
-	variables_creation_vars: string
-	variables_tick_vars: string
+	space_local_velocity: boolean
+	variables_creation_vars: molang[]
+	variables_tick_vars: molang[]
 	emitter_rate_mode: string
 	emitter_rate_rate: molang
 	emitter_rate_amount: molang
@@ -18,22 +19,22 @@ interface ConfigVariables {
 	emitter_lifetime_activation: molang
 	emitter_lifetime_expiration: molang
 	emitter_shape_mode: string
-	emitter_shape_offset: molang
+	emitter_shape_offset: molang[3]
 	emitter_shape_radius: molang
-	emitter_shape_half_dimensions: molang
-	emitter_shape_plane_normal: molang
+	emitter_shape_half_dimensions: molang[3]
+	emitter_shape_plane_normal: molang[3]
 	emitter_shape_surface_only: boolean
-	particle_appearance_size: molang
+	particle_appearance_size: molang[2]
 	particle_appearance_facing_camera_mode: string
 	particle_appearance_material: string
 	particle_direction_mode: string
-	particle_direction_direction: molang
+	particle_direction_direction: molang[3]
 	particle_motion_mode: string
 	particle_motion_linear_speed: molang
-	particle_motion_linear_acceleration: molang
+	particle_motion_linear_acceleration: molang[3]
 	particle_motion_linear_drag_coefficient: molang
-	particle_motion_relative_position: molang
-	particle_motion_direction: molang
+	particle_motion_relative_position: molang[3]
+	particle_motion_direction: molang[3]
 	particle_rotation_mode: string
 	particle_rotation_initial_rotation: molang
 	particle_rotation_rotation_rate: molang
@@ -42,17 +43,16 @@ interface ConfigVariables {
 	particle_rotation_rotation: molang
 	particle_lifetime_mode: string
 	particle_lifetime_max_lifetime: molang
-	particle_lifetime_kill_plane: molang
+	particle_lifetime_kill_plane: molang[4]
 	particle_lifetime_expiration_expression: molang
-	particle_lifetime_expire_in: string
-	particle_lifetime_expire_outside: string
-	particle_texture_width: number
-	particle_texture_height: number
+	particle_lifetime_expire_in: string[]
+	particle_lifetime_expire_outside: string[]
+	particle_texture_size: number[2]
 	particle_texture_path: string
 	particle_texture_mode: string
-	particle_texture_uv: molang
-	particle_texture_uv_size: molang
-	particle_texture_uv_step: molang
+	particle_texture_uv: molang[2]
+	particle_texture_uv_size: molang[2]
+	particle_texture_uv_step: molang[2]
 	particle_texture_frames_per_second: number
 	particle_texture_max_frame: molang
 	particle_texture_stretch_to_lifetime: boolean
@@ -62,7 +62,7 @@ interface ConfigVariables {
 	particle_color_interpolant: molang
 	particle_color_range: number
 	particle_color_gradient: object
-	particle_color_expression: molang
+	particle_color_expression: molang[4]
 	particle_color_light: boolean
 	particle_collision_enabled: molang
 	particle_collision_collision_drag: number
@@ -79,7 +79,7 @@ interface ConfigOptions {
 	path: string
 }
 
-export class Config {
+export class Config implements ConfigVariables {
 	constructor(config?: Config | object, options: ConfigOptions): void
 
 	texture: THREE.Texture

@@ -361,7 +361,7 @@ class Particle {
 		this.setUV(uv.x, uv.y, size.x||this.emitter.config.particle_texture_size[0], size.y||this.emitter.config.particle_texture_size[1])
 	}
 	setUV(x, y, w, h) {
-		var epsilon = 0.05
+		var epsilon = 0.0;
 		let attribute = this.geometry.getAttribute('uv');
 
 		w = (x+w - 2*epsilon) / this.emitter.config.particle_texture_size[0];
