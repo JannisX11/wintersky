@@ -162,7 +162,9 @@ class Particle {
 		}
 
 		if (this.emitter.local_space.parent) {
-
+			if (this.emitter.parent_mode == 'locator') {
+				this.speed.applyQuaternion(this.emitter.local_space.getWorldQuaternion(new THREE.Quaternion()))
+			}
 			if (!this.emitter.config.space_local_rotation) {
 				this.position.applyQuaternion(this.emitter.local_space.getWorldQuaternion(new THREE.Quaternion()))
 			}
