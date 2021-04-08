@@ -2,7 +2,7 @@ import { Object3D } from 'three'
 
 type molang = string
 
-type ConfigVariables = {
+type Config = {
 	identifier: string
 	file_path: string
 	curves: object
@@ -83,14 +83,14 @@ type ConfigTypeObject = {
 	dimensions?: number
 }
 
-interface ConfigOptions {
+export interface ConfigOptions {
 	/**
 	 * File path of the particle file
 	 */
 	path: string
 }
 
-export class Config {
+class Config {
 	[key: string]: any
 
 	constructor(config?: Config | object, options?: ConfigOptions)
@@ -119,7 +119,7 @@ export class Config {
 	static types: ConfigTypes
 }
 
-interface EmitterOptions {
+export interface EmitterOptions {
 	/**
 	 * Specifies how the emitter loops
 	 */
@@ -130,7 +130,7 @@ interface EmitterOptions {
 	parent_mode: 'world' | 'entity' | 'locator'
 }
 
-export class Emitter {
+class Emitter {
 	constructor(config?: Config, options?: EmitterOptions)
 	config: Config
 	/**
@@ -169,21 +169,8 @@ export class Emitter {
 	jumpTo(time: number): Emitter
 }
 
-/**
- * Updates the particle facing rotation
- * @param camera THREE.JS camera to orient the particle towards
- */
-export function updateFacingRotation(camera: THREE.Camera): void
 
-/**
- * Method to provide visuals for a texture. Null by default. Gets called by configs if the texture is updated. Should return a data URL.
- * @param config Particle config that is requesting the texture
- */
-export let fetchTexture:
-	| null
-	| ((config: Config) => string | Promise<string>);
-
-interface GlobalOptions {
+export interface GlobalOptions {
 	/**
 	 * Maximum amount of particles per emitter
 	 */
@@ -205,13 +192,34 @@ interface GlobalOptions {
 	 */
 	scale: number
 }
-export const global_options: GlobalOptions
 
-/**
- * Array of all current emitters in the project
- */
-export const emitters: Emitter[]
 
-export let space: Object3D;
+export interface WinterskyOptions {
+	/**
+	 * Method to provide visuals for a texture. Null by default. Gets called by configs if the texture is updated. Should return a data URL.
+	 * @param config Particle config that is requesting the texture
+	 */
+	fetchTexture: null | ((config: Config) => string | Promise<string>);
+}
 
-export as namespace Wintersky;
+export default class Wintersky {
+	public space: Object3D;
+	/**
+	 * Array of all current emitters in the project
+	 */
+	public emitters: Emitter[];
+	public global_options: GlobalOptions
+
+	public Emitter: typeof Emitter
+	public Config: typeof Config
+
+	constructor(options: WinterskyOptions)
+
+	/**
+	 * Updates the particle facing rotation
+	 * @param camera THREE.JS camera to orient the particle towards
+	 */
+	updateFacingRotation(camera: THREE.Camera): void
+
+	fetchTexture(config: Config): Promise<string> | string
+}
