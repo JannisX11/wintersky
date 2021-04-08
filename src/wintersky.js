@@ -34,7 +34,7 @@ export default class Wintersky {
 	}
 
 	fetchTexture(config) {
-		if(typeof this._fetchTexture === "function") return this._fetchTexture()
+		if(typeof this._fetchTexture === "function") return this._fetchTexture(config)
 	}
 	
 	updateFacingRotation(camera) {
