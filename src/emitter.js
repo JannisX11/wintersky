@@ -46,8 +46,9 @@ function calculateCurve(emitter, curve, params) {
 
 
 class Emitter {
-	constructor(config, options = 0) {
-		Wintersky.emitters.push(this);
+	constructor(wintersky, config, options = 0) {
+		this.wintersky = wintersky
+		wintersky.emitters.push(this);
 
 		this.config = config instanceof Config ? config : new Config(config, options);
 
@@ -58,7 +59,7 @@ class Emitter {
 				|| (this.config.curves[key] && calculateCurve(this, this.config.curves[key], params))
 		}
 
-		let global_scale = Wintersky.global_options._scale;
+		let global_scale = wintersky.global_options._scale;
 		this.local_space = new THREE.Object3D();
 		this.local_space.scale.set(global_scale, global_scale, global_scale);
 		this.global_space = new THREE.Object3D();
@@ -86,8 +87,8 @@ class Emitter {
 		this.age = 0;
 		this.view_age = 0;
 		this.enabled = false;
-		this.loop_mode = options.loop_mode || Wintersky.global_options.loop_mode;
-		this.parent_mode = options.parent_mode || Wintersky.global_options.parent_mode;
+		this.loop_mode = options.loop_mode || wintersky.global_options.loop_mode;
+		this.parent_mode = options.parent_mode || wintersky.global_options.parent_mode;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
 		this.tick_variables = {};
 		this.tick_values = {};
@@ -97,7 +98,7 @@ class Emitter {
 		this.updateMaterial();
 	}
 	clone() {
-		let clone = new Wintersky.Emitter(this.config);
+		let clone = new Wintersky.Emitter(this.wintersky, this.config);
 		clone.loop_mode = this.loop_mode;
 		return clone;
 	}
@@ -204,7 +205,7 @@ class Emitter {
 		this.view_age = 0;
 		this.enabled = true;
 		this.initialized = true;
-		Wintersky.space.add(this.global_space);
+		this.wintersky.space.add(this.global_space);
 		var params = this.params()
 		this.active_time = this.calculate(this.config.emitter_lifetime_active_time, params)
 		this.sleep_time = this.calculate(this.config.emitter_lifetime_sleep_time, params)
@@ -225,7 +226,7 @@ class Emitter {
 	}
 	tick(jump) {
 		let params = this.params()
-		let {tick_rate} = Wintersky.global_options;
+		let { tick_rate } = this.wintersky.global_options;
 		this.tick_values = {};
 
 		// Calculate tick values
@@ -294,7 +295,7 @@ class Emitter {
 		return this;
 	}
 	jumpTo(second) {
-		let {tick_rate} = Wintersky.global_options;
+		let {tick_rate} = this.wintersky.global_options;
 		let old_time = Math.round(this.view_age * tick_rate)
 		let new_time = Math.round(second * tick_rate);
 		if (this.loop_mode != 'once') {
@@ -322,7 +323,7 @@ class Emitter {
 		clearInterval(this.tick_interval);
 		this.tick_interval = setInterval(() => {
 			this.tick()
-		}, 1000/Wintersky.global_options.tick_rate)
+		}, 1000 / this.wintersky.global_options.tick_rate)
 		return this;
 	}
 	toggleLoop() {
@@ -348,16 +349,16 @@ class Emitter {
 
 		if (this.config.emitter_rate_mode == 'steady') {
 			var max = this.calculate(this.config.emitter_rate_maximum, this.params())||0;
-			max = MathUtil.clamp(max, 0, Wintersky.global_options.max_emitter_particles)
+			max = MathUtil.clamp(max, 0, this.wintersky.global_options.max_emitter_particles)
 			count = MathUtil.clamp(count, 0, max-this.particles.length);
 		} else {
-			count = MathUtil.clamp(count, 0, Wintersky.global_options.max_emitter_particles-this.particles.length);
+			count = MathUtil.clamp(count, 0, this.wintersky.global_options.max_emitter_particles-this.particles.length);
 		}
 		for (var i = 0; i < count; i++) {
 			if (this.dead_particles.length) {
 				var p = this.dead_particles.pop()
 			} else {
-				var p = new Particle(this)
+				var p = new Particle(this.wintersky, this)
 			}
 			p.add()
 		}
@@ -371,7 +372,7 @@ class Emitter {
 		this.dead_particles.splice(0, Infinity);
 		if (this.local_space.parent) this.local_space.parent.remove(this.local_space);
 		if (this.global_space.parent) this.global_space.parent.remove(this.global_space);
-		removeFromArray(Wintersky.emitters, this);
+		removeFromArray(this.wintersky.emitters, this);
 	}
 }
 Wintersky.Emitter = Emitter;

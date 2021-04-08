@@ -43,12 +43,16 @@ async function initializeApp() {
 	View.scene.add(View.grid);
 
 	resizeCanvas()
-	animate()
+	
 
 	// Initialize Particles
 	let content = await loadJSON('../examples/rainbow.particle.json');
-	View.emitter = new Wintersky.Emitter(content);
-	View.scene.add(Wintersky.space);
+
+	View.wintersky = new Wintersky()
+	View.emitter = new Wintersky.Emitter(View.wintersky, content);
+	View.scene.add(View.wintersky.space);
+
+	animate();
 	View.emitter.playLoop();
 }
 
@@ -56,7 +60,7 @@ function animate() {
 	requestAnimationFrame(animate);
 	View.controls.update();
 	// Update Particle facing rotation
-	Wintersky.updateFacingRotation(View.camera);
+	View.wintersky.updateFacingRotation(View.camera);
 	// Render
 	View.renderer.render(View.scene, View.camera);
 }
