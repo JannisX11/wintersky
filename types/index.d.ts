@@ -2,7 +2,7 @@ import { Object3D } from 'three'
 
 type molang = string
 
-type Config = {
+type ConfigVariables = {
 	identifier: string
 	file_path: string
 	curves: object
@@ -90,7 +90,7 @@ export interface ConfigOptions {
 	path: string
 }
 
-class Config {
+declare class Config {
 	[key: string]: any
 
 	constructor(config?: Config | object, options?: ConfigOptions)
@@ -130,7 +130,7 @@ export interface EmitterOptions {
 	parent_mode: 'world' | 'entity' | 'locator'
 }
 
-class Emitter {
+declare class Emitter {
 	constructor(config?: Config, options?: EmitterOptions)
 	config: Config
 	/**
