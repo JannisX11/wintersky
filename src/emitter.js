@@ -50,7 +50,7 @@ class Emitter {
 		this.wintersky = wintersky
 		wintersky.emitters.push(this);
 
-		this.config = config instanceof Config ? config : new Config(config, options);
+		this.config = config instanceof Config ? config : new Config(wintersky, config, options);
 
 		this.Molang = new Molang();
 		this.Molang.variableHandler = (key, params) => {
