@@ -90,10 +90,14 @@ export interface ConfigOptions {
 	path: string
 }
 
-declare class Config {
+export class Config {
 	[key: string]: any
 
-	constructor(config?: Config | object, options?: ConfigOptions)
+	constructor(
+		wintersky: Wintersky,
+		config?: Config | object,
+		options?: ConfigOptions
+	)
 
 	texture: THREE.Texture
 	/**
@@ -130,8 +134,12 @@ export interface EmitterOptions {
 	parent_mode: 'world' | 'entity' | 'locator'
 }
 
-declare class Emitter {
-	constructor(config?: Config, options?: EmitterOptions)
+export class Emitter {
+	constructor(
+		wintersky: Wintersky,
+		config?: Config,
+		options?: EmitterOptions
+	)
 	config: Config
 	/**
 	 * Delete the emitter
@@ -169,7 +177,6 @@ declare class Emitter {
 	jumpTo(time: number): Emitter
 }
 
-
 export interface GlobalOptions {
 	/**
 	 * Maximum amount of particles per emitter
@@ -193,25 +200,24 @@ export interface GlobalOptions {
 	scale: number
 }
 
-
 export interface WinterskyOptions {
 	/**
 	 * Method to provide visuals for a texture. Null by default. Gets called by configs if the texture is updated. Should return a data URL.
 	 * @param config Particle config that is requesting the texture
 	 */
-	fetchTexture: null | ((config: Config) => string | Promise<string>);
+	fetchTexture: null | ((config: Config) => string | Promise<string>)
 }
 
 export default class Wintersky {
-	public space: Object3D;
+	public space: Object3D
 	/**
 	 * Array of all current emitters in the project
 	 */
-	public emitters: Emitter[];
+	public emitters: Emitter[]
 	public global_options: GlobalOptions
 
-	public Emitter: typeof Emitter
-	public Config: typeof Config
+	public static Emitter: typeof Emitter
+	public static Config: typeof Config
 
 	constructor(options: WinterskyOptions)
 
