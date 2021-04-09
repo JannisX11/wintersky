@@ -358,7 +358,7 @@ class Emitter {
 			if (this.dead_particles.length) {
 				var p = this.dead_particles.pop()
 			} else {
-				var p = new Particle(this.wintersky, this)
+				var p = new Particle(this)
 			}
 			p.add()
 		}

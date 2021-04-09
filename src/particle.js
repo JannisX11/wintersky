@@ -30,8 +30,7 @@ function calculateGradient(gradient, percent) {
 
 
 class Particle {
-	constructor(wintersky, emitter) {
-		this.wintersky = wintersky
+	constructor(emitter) {
 		this.emitter = emitter;
 
 		this.geometry = new THREE.PlaneBufferGeometry(2, 2)
@@ -169,7 +168,7 @@ class Particle {
 			}
 			if (!this.emitter.config.space_local_position) {
 				let offset = this.emitter.local_space.getWorldPosition(new THREE.Vector3());
-				this.position.addScaledVector(offset, 1/this.wintersky.global_options._scale);
+				this.position.addScaledVector(offset, 1/this.emitter.wintersky.global_options._scale);
 			}
 		}
 
@@ -180,7 +179,7 @@ class Particle {
 	}
 	tick(jump) {
 		var params = this.params()
-		let step = 1 / this.wintersky.global_options.tick_rate;
+		let step = 1 / this.emitter.wintersky.global_options.tick_rate;
 
 		//Lifetime
 		this.age += step;
