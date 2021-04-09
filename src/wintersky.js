@@ -18,19 +18,20 @@ export default class Wintersky {
 			loop_mode: 'auto',
 			parent_mode: 'world',
 			_scale: 1,
-
-			get scale() {
-				return this._scale;
+		}
+		Object.defineProperty(this.global_options, 'scale', {
+			get: () => {
+				return this.global_options._scale;
 			},
-			set scale(val) {
-				this._scale = val;
+			set: (val) => {
+				this.global_options._scale = val;
 				this.emitters.forEach(emitter => {
 					emitter.local_space.scale.set(val, val, val);
 					emitter.global_space.scale.set(val, val, val);
 				})
 				//Wintersky.space.scale.set(val, val, val);
-			}
-		}
+			},
+		})
 	}
 
 	fetchTexture(config) {
