@@ -205,7 +205,7 @@ export interface WinterskyOptions {
 	 * Method to provide visuals for a texture. Null by default. Gets called by configs if the texture is updated. Should return a data URL.
 	 * @param config Particle config that is requesting the texture
 	 */
-	fetchTexture: null | ((config: Config) => Promise<string | undefined> | string | undefined)
+	fetchTexture?: null | ((config: Config) => Promise<string | undefined> | string | undefined)
 }
 
 export class Scene {
@@ -219,7 +219,7 @@ export class Scene {
 	public static Emitter: typeof Emitter
 	public static Config: typeof Config
 
-	constructor(options: WinterskyOptions)
+	constructor(options?: WinterskyOptions)
 
 	/**
 	 * Updates the particle facing rotation
