@@ -94,7 +94,7 @@ export class Config {
 	[key: string]: any
 
 	constructor(
-		wintersky: Wintersky,
+		scene: Scene,
 		config?: Config | object,
 		options?: ConfigOptions
 	)
@@ -136,7 +136,7 @@ export interface EmitterOptions {
 
 export class Emitter {
 	constructor(
-		wintersky: Wintersky,
+		scene: Scene,
 		config?: Config,
 		options?: EmitterOptions
 	)
@@ -227,7 +227,7 @@ export class Scene {
 	 */
 	updateFacingRotation(camera: THREE.Camera): void
 
-	fetchTexture(config: Config): Promise<string | undefined> | string | undefined
+	fetchTexture(config: Config): Promise<string> | string | Promise<undefined> | undefined
 }
 
 export as namespace Wintersky
