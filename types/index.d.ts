@@ -141,6 +141,8 @@ export class Emitter {
 		options?: EmitterOptions
 	)
 	config: Config
+	loop_mode: 'auto' | 'once' | 'looping'
+	parent_mode: 'world' | 'entity' | 'locator'
 	/**
 	 * Delete the emitter
 	 */
