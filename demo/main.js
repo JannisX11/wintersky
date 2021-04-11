@@ -48,7 +48,7 @@ async function initializeApp() {
 	// Initialize Particles
 	let content = await loadJSON('../examples/rainbow.particle.json');
 
-	View.wintersky = new Wintersky()
+	View.wintersky = new Wintersky.Scene()
 	View.emitter = new Wintersky.Emitter(View.wintersky, content);
 	View.scene.add(View.wintersky.space);
 

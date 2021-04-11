@@ -20,8 +20,8 @@ function parseColor(input) {
 }
 
 class Config {
-	constructor(wintersky, config, options = 0) {
-		this.wintersky = wintersky
+	constructor(scene, config, options = 0) {
+		this.scene = scene
 		this.texture = new THREE.Texture(new Image());
 		this.texture.image.onload = () => {
 			this.texture.needsUpdate = true;
@@ -414,8 +414,8 @@ class Config {
 			this.texture.image.src = url;
 		}
 
-		if (typeof this.wintersky.fetchTexture == 'function') {
-			let result = this.wintersky.fetchTexture(this);
+		if (typeof this.scene.fetchTexture == 'function') {
+			let result = this.scene.fetchTexture(this);
 			if (result instanceof Promise) {
 				result.then(result2 => {
 					continueLoading(result2);

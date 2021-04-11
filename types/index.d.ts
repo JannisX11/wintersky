@@ -208,7 +208,7 @@ export interface WinterskyOptions {
 	fetchTexture: null | ((config: Config) => string | Promise<string>)
 }
 
-export default class Wintersky {
+export class Scene {
 	public space: Object3D
 	/**
 	 * Array of all current emitters in the project
@@ -229,3 +229,5 @@ export default class Wintersky {
 
 	fetchTexture(config: Config): Promise<string> | string
 }
+
+export as namespace Wintersky
