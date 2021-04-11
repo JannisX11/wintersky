@@ -1,4 +1,5 @@
 import Wintersky from './wintersky';
+import * as THREE from 'three';
 
 class Scene {
     /**
