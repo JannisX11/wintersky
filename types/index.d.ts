@@ -227,7 +227,7 @@ export class Scene {
 	 */
 	updateFacingRotation(camera: THREE.Camera): void
 
-	fetchTexture(config: Config): Promise<string> | string
+	fetchTexture(config: Config): Promise<string | undefined> | string | undefined
 }
 
 export as namespace Wintersky
