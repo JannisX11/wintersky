@@ -20,11 +20,35 @@
 			position: fixed;
 			height: 100%;
 			width: 100%;
+			font-family: Arial, Helvetica, sans-serif;
+		}
+		#hud {
+			position: absolute;
+			top: 0;
+			width: 100%;
+			box-shadow: 0 0 5px #00000050;
+			padding: 10px;
+			background: white;
+		}
+		select {
+			padding: 5px;
 		}
 	</style>
 </head>
 <body>
 	<canvas id="preview"></canvas>
+	<div id="hud">
+		Particle Effect:
+		<select value="rainbow" onchange="switchParticleFile(this)">
+			<option id="rainbow">Rainbow</option>
+			<option id="loading">Loading</option>
+			<option id="fire">Fire</option>
+			<option id="magic">Magic</option>
+			<option id="rain">Rain</option>
+			<option id="snow">Snow</option>
+			<option id="trail">Trail</option>
+		</select>
+	</div>
 	<script>
 		initializeApp()
 	</script>

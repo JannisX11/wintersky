@@ -78,3 +78,11 @@ function resizeCanvas() {
 }
 
 window.addEventListener('resize', resizeCanvas, false);
+
+async function switchParticleFile(select) {
+	let name = select.selectedOptions[0].id;
+	let content = await loadJSON(`../examples/${name}.particle.json`);
+
+	View.emitter.stop(true);
+	View.emitter.config.reset().setFromJSON(content);
+}
