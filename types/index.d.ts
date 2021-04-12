@@ -1,6 +1,8 @@
-type molang = string;
+import { Object3D } from 'three'
 
-interface ConfigVariables {
+type molang = string
+
+type ConfigVariables = {
 	identifier: string
 	file_path: string
 	curves: object
@@ -19,22 +21,22 @@ interface ConfigVariables {
 	emitter_lifetime_activation: molang
 	emitter_lifetime_expiration: molang
 	emitter_shape_mode: string
-	emitter_shape_offset: molang[3]
+	emitter_shape_offset: [molang, molang, molang]
 	emitter_shape_radius: molang
-	emitter_shape_half_dimensions: molang[3]
-	emitter_shape_plane_normal: molang[3]
+	emitter_shape_half_dimensions: [molang, molang, molang]
+	emitter_shape_plane_normal: [molang, molang, molang]
 	emitter_shape_surface_only: boolean
-	particle_appearance_size: molang[2]
+	particle_appearance_size: [molang, molang]
 	particle_appearance_facing_camera_mode: string
 	particle_appearance_material: string
 	particle_direction_mode: string
-	particle_direction_direction: molang[3]
+	particle_direction_direction: [molang, molang, molang]
 	particle_motion_mode: string
 	particle_motion_linear_speed: molang
-	particle_motion_linear_acceleration: molang[3]
+	particle_motion_linear_acceleration: [molang, molang, molang]
 	particle_motion_linear_drag_coefficient: molang
-	particle_motion_relative_position: molang[3]
-	particle_motion_direction: molang[3]
+	particle_motion_relative_position: [molang, molang, molang]
+	particle_motion_direction: [molang, molang, molang]
 	particle_rotation_mode: string
 	particle_rotation_initial_rotation: molang
 	particle_rotation_rotation_rate: molang
@@ -43,16 +45,16 @@ interface ConfigVariables {
 	particle_rotation_rotation: molang
 	particle_lifetime_mode: string
 	particle_lifetime_max_lifetime: molang
-	particle_lifetime_kill_plane: molang[4]
+	particle_lifetime_kill_plane: [molang, molang, molang, molang]
 	particle_lifetime_expiration_expression: molang
 	particle_lifetime_expire_in: string[]
 	particle_lifetime_expire_outside: string[]
-	particle_texture_size: number[2]
+	particle_texture_size: [number, number]
 	particle_texture_path: string
 	particle_texture_mode: string
-	particle_texture_uv: molang[2]
-	particle_texture_uv_size: molang[2]
-	particle_texture_uv_step: molang[2]
+	particle_texture_uv: [molang, molang]
+	particle_texture_uv_size: [molang, molang]
+	particle_texture_uv_step: [molang, molang]
 	particle_texture_frames_per_second: number
 	particle_texture_max_frame: molang
 	particle_texture_stretch_to_lifetime: boolean
@@ -62,7 +64,7 @@ interface ConfigVariables {
 	particle_color_interpolant: molang
 	particle_color_range: number
 	particle_color_gradient: object
-	particle_color_expression: molang[4]
+	particle_color_expression: [molang, molang, molang, molang]
 	particle_color_light: boolean
 	particle_collision_enabled: molang
 	particle_collision_collision_drag: number
@@ -71,16 +73,31 @@ interface ConfigVariables {
 	particle_collision_expire_on_contact: boolean
 }
 
+type ConfigVariableKey = keyof ConfigVariables
+type ConfigTypes = {
+	[key in ConfigVariableKey]: ConfigTypeObject
+}
+type ConfigTypeObject = {
+	type: 'string' | 'molang' | 'boolean' | 'number'
+	array?: boolean
+	dimensions?: number
+}
 
-interface ConfigOptions {
+export interface ConfigOptions {
 	/**
 	 * File path of the particle file
 	 */
 	path: string
 }
 
-export class Config implements ConfigVariables {
-	constructor(config?: Config | object, options: ConfigOptions): void
+export class Config {
+	[key: string]: any
+
+	constructor(
+		scene: Scene,
+		config?: Config | object,
+		options?: ConfigOptions
+	)
 
 	texture: THREE.Texture
 	/**
@@ -101,13 +118,12 @@ export class Config implements ConfigVariables {
 	/**
 	 * Method that runs when the texture of the config is updated. Null by default
 	 */
-	onTextureUpdate: null | function(): void
+	onTextureUpdate: null | (() => void)
 
-	static types: ConfigVariables
-
+	static types: ConfigTypes
 }
 
-interface EmitterOptions  {
+export interface EmitterOptions {
 	/**
 	 * Specifies how the emitter loops
 	 */
@@ -119,7 +135,11 @@ interface EmitterOptions  {
 }
 
 export class Emitter {
-	constructor(config?: Config, options?: EmitterOptions): void
+	constructor(
+		scene: Scene,
+		config?: Config,
+		options?: EmitterOptions
+	)
 	config: Config
 	/**
 	 * Delete the emitter
@@ -157,20 +177,7 @@ export class Emitter {
 	jumpTo(time: number): Emitter
 }
 
-/**
- * Updates the particle facing rotation
- * @param camera THREE.JS camera to orient the particle towards
- */
-export function updateFacingRotation(camera: THREE.Camera): void
-
-/**
- * Method to provide visuals for a texture. Null by default. Gets called by configs if the texture is updated. Should return a data URL.
- * @param config Particle config that is requesting the texture
- */
-export let fetchTexture: null | ((config: Config) => URL)
-
-
-interface GlobalOptions {
+export interface GlobalOptions {
 	/**
 	 * Maximum amount of particles per emitter
 	 */
@@ -192,14 +199,35 @@ interface GlobalOptions {
 	 */
 	scale: number
 }
-export const global_options: GlobalOptions
 
-/**
- * Array of all current emitters in the project
- */
-export const emitters: Emitter[]
+export interface WinterskyOptions {
+	/**
+	 * Method to provide visuals for a texture. Null by default. Gets called by configs if the texture is updated. Should return a data URL.
+	 * @param config Particle config that is requesting the texture
+	 */
+	fetchTexture?: null | ((config: Config) => Promise<string | undefined> | string | undefined)
+}
 
+export class Scene {
+	public space: Object3D
+	/**
+	 * Array of all current emitters in the project
+	 */
+	public emitters: Emitter[]
+	public global_options: GlobalOptions
 
+	public static Emitter: typeof Emitter
+	public static Config: typeof Config
 
+	constructor(options?: WinterskyOptions)
 
-export as namespace Wintersky;
+	/**
+	 * Updates the particle facing rotation
+	 * @param camera THREE.JS camera to orient the particle towards
+	 */
+	updateFacingRotation(camera: THREE.Camera): void
+
+	fetchTexture(config: Config): Promise<string | undefined> | string | undefined
+}
+
+export as namespace Wintersky
