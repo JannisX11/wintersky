@@ -141,6 +141,9 @@ export class Emitter {
 		options?: EmitterOptions
 	)
 	config: Config
+	local_space: Object3D
+	global_space: Object3D
+
 	/**
 	 * Delete the emitter
 	 */
