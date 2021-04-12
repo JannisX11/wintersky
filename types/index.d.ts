@@ -141,9 +141,10 @@ export class Emitter {
 		options?: EmitterOptions
 	)
 	config: Config
+	loop_mode: 'auto' | 'once' | 'looping'
+	parent_mode: 'world' | 'entity' | 'locator'
 	local_space: Object3D
 	global_space: Object3D
-
 	/**
 	 * Delete the emitter
 	 */
