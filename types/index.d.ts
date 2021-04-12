@@ -178,6 +178,11 @@ export class Emitter {
 	 * @param time Time in seconds
 	 */
 	jumpTo(time: number): Emitter
+
+	/**
+	 * Clone an emitter
+	 */
+	clone(): Emitter
 }
 
 export interface GlobalOptions {
