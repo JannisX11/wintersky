@@ -155,8 +155,16 @@ class Emitter {
 		this.config.updateTexture();
 	}
 	updateFacingRotation(camera) {
+		if (this.particles.length == 0) return;
+
 		const quat = new THREE.Quaternion();
 		const vec = new THREE.Vector3();
+
+		let world_quat_inverse;
+		if (this.config.particle_appearance_facing_camera_mode.substr(0, 6) == 'rotate') {
+			world_quat_inverse = this.particles[0].mesh.parent.getWorldQuaternion(quat).inverse();
+		}
+
 		this.particles.forEach(p => {
 
 			switch (this.config.particle_appearance_facing_camera_mode) {
@@ -172,11 +180,13 @@ class Emitter {
 					break;
 				case 'rotate_xyz':
 					p.mesh.rotation.copy(camera.rotation);
+					p.mesh.quaternion.premultiply(world_quat_inverse);
 					break;
 				case 'rotate_y':
 					p.mesh.rotation.copy(camera.rotation);
 					p.mesh.rotation.reorder('YXZ');
 					p.mesh.rotation.x = p.mesh.rotation.z = 0;
+					p.mesh.quaternion.premultiply(world_quat_inverse);
 					break;
 				case 'direction_x':
 					var q = quat.setFromUnitVectors(Normals.x, vec.copy(p.speed).normalize())
