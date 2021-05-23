@@ -54,9 +54,7 @@ class Emitter {
 
 		this.Molang = new Molang();
 		this.Molang.variableHandler = (key, params) => {
-			return this.creation_values[key]
-				|| this.tick_values[key]
-				|| (this.config.curves[key] && calculateCurve(this, this.config.curves[key], params))
+			return this.config.curves[key] && calculateCurve(this, this.config.curves[key], params);
 		}
 
 		let global_scale = scene.global_options._scale;
@@ -90,9 +88,7 @@ class Emitter {
 		this.loop_mode = options.loop_mode || scene.global_options.loop_mode;
 		this.parent_mode = options.parent_mode || scene.global_options.parent_mode;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
-		this.tick_variables = {};
 		this.tick_values = {};
-		this.creation_variables = {};
 		this.creation_values = {};
 
 		this.updateMaterial();
@@ -213,10 +209,7 @@ class Emitter {
 		this.creation_values = {};
 
 		for (var line of this.config.variables_creation_vars) {
-			let [key, value] = line.split(/\s*=(.+)/);
-			if (!value) continue;
-			value = value.replace(/^\s*=\s*/, '');
-			this.creation_values[key] = this.Molang.parse(value)
+			this.Molang.parse(line);
 		}
 
 		if (this.config.emitter_rate_mode === 'instant') {
@@ -227,14 +220,10 @@ class Emitter {
 	tick(jump) {
 		let params = this.params()
 		let { tick_rate } = this.scene.global_options;
-		this.tick_values = {};
 
 		// Calculate tick values
 		for (var line of this.config.variables_tick_vars) {
-			let [key, value] = line.split(/\s*=(.+)/);
-			if (!value) continue;
-			value = value.replace(/^\s*=\s*/, '');
-			this.tick_values[key] = this.Molang.parse(value)
+			this.Molang.parse(line);
 		}
 		// Spawn steady particles
 		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
