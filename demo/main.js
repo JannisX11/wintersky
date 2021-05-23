@@ -85,4 +85,5 @@ async function switchParticleFile(select) {
 
 	View.emitter.stop(true);
 	View.emitter.config.reset().setFromJSON(content);
+	View.emitter.playLoop();
 }
