@@ -217,7 +217,14 @@ class Particle {
 				// Kill Plane
 				var plane = this.emitter.calculate(this.emitter.config.particle_lifetime_kill_plane, params);
 				var start_point = new THREE.Vector3().copy(this.position).addScaledVector(this.speed, -step);
-				var line = new THREE.Line3(start_point, this.position)
+				var end_point = new THREE.Vector3().copy(this.position);
+				if (this.emitter.config.space_local_position && this.emitter.parent_mode == 'locator') {
+					start_point.x *= -1;
+					start_point.y *= -1;
+					end_point.x *= -1;
+					end_point.y *= -1;
+				}
+				var line = new THREE.Line3(start_point, end_point);
 				if (plane.intersectsLine(line)) {
 					this.remove();
 					return this;
