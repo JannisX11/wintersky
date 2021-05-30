@@ -162,7 +162,7 @@ class Emitter {
 
 		let world_quat_inverse;
 		if (this.config.particle_appearance_facing_camera_mode.substr(0, 6) == 'rotate') {
-			world_quat_inverse = this.particles[0].mesh.parent.getWorldQuaternion(quat).inverse();
+			world_quat_inverse = this.particles[0].mesh.parent.getWorldQuaternion(quat).invert();
 		}
 
 		this.particles.forEach(p => {
@@ -199,6 +199,15 @@ class Emitter {
 				case 'direction_z':
 					var q = quat.setFromUnitVectors(Normals.z, vec.copy(p.speed).normalize())
 					p.mesh.rotation.setFromQuaternion(q);
+					break;
+				case 'emitter_transform_xy':
+					p.mesh.rotation.set(0, 0, 0);
+					break;
+				case 'emitter_transform_xz':
+					p.mesh.rotation.set(-Math.PI/2, 0, 0);
+					break;
+				case 'emitter_transform_yz':
+					p.mesh.rotation.set(0, Math.PI/2, 0);
 					break;
 			}
 			p.mesh.rotation.z += p.rotation||0;
