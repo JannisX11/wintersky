@@ -18,15 +18,17 @@ import Wintersky from 'wintersky';
 // Load JSON File
 import RainbowParticle from './rainbow.particle.json';
 
+// Setup Wintersky Scene
+const wintersky_scene = new Wintersky.Scene();
 // Setup Emitter
-const emitter = new Wintersky.Emitter(RainbowParticle);
+const emitter = new Wintersky.Emitter(wintersky_scene, RainbowParticle);
 // Add emitter into Three.JS scene
-scene.add(Wintersky.space);
+threejs_scene.add(wintersky_scene.space);
 // Play Effect
 emitter.playLoop();
 
-// Update particle rotation in the rendering loop
-Wintersky.updateFacingRotation(camera);
+// Update particle rotation in your app's rendering loop
+wintersky_scene.updateFacingRotation(camera);
 ```
 
 # Development
@@ -37,13 +39,47 @@ Wintersky.updateFacingRotation(camera);
 
 # API
 
+## Scene
+
+### `new Wintersky.Scene(options?)`
+
+Creates a new scene, which can hold multiple emitters
+
+* `options: Object`:
+	* `fetchTexture: Function`
+
+### Properties
+
+* `emitter: Array` List of all emitters
+* `space: three.js Object3D` Global particle space. Add this to your three.js scene.
+* `global_options: Object`
+	* `max_emitter_particles: Number` Maximum amount of particles per emitter
+	* `tick_rate: Number` Emitter tick rate per second. 
+	* `loop_mode: String` Default emitter loop mode
+	* `parent_mode: String` Default emitter parent mode
+	* `scale: Number` Emitter scale. The default is 1 for block space. Set to 16 to run in a pixel space environment like Blockbench.
+
+### `WinterskyScene#updateFacingRotation(camera)`
+
+Updates the particle facing rotation for all emitters
+* `camera: Camera` three.js camera to orient the particle towards
+
+### `WinterskyScene#fetchTexture( config )`
+
+Method to provide visuals for a texture. Null by default. Gets called by configs if the texture is updated. Should return a data URL, or a promise resulting in a data URL.
+* `config: Config` Particle config that is requesting the texture
+
+
+&nbsp;
 ## Emitter
 
-### `new Wintersky.Emitter(config?, options?)`
+### `new Wintersky.Emitter(scene, config?, options?)`
 
 Creates a new particle emitter
 
+* `scene: Wintersky Scene`: Wintersky scene to add this emitter to
 * `config: Config`: Config instance
+* `scene: Scene`: Wintersky Scene
 * `options: Object`:
 	* `loop_mode: String` How the emitter loops: `auto`, `once` or `looping`. Default: `auto`
 	* `loop_mode: String` How the emitter is located in the world: `world`, `entity` or `locator`. Default: `world`
@@ -97,10 +133,13 @@ Jumps to a specific time in the emitter. This is optimited to run as few operati
 &nbsp;
 ## Config
 
-### `new Wintersky.Config(config, options)`
+Configs store the configuration of an emitter. All emitters have a config by default.
+
+### `new Wintersky.Config(scene, config, options)`
 
 Creates a new emitter config instance
 
+* `scene: Wintersky Scene`: Wintersky scene
 * `config: Config`: Config instance
 * `options: Object`:
 	* `path: String` Location of the particle file that the config is based on.
@@ -125,30 +164,3 @@ Loads the configuration from a JSON particle file
 ### Config#onTextureUpdate()
 
 Method that runs when the texture of the config is updated. Null by default
-
-
-&nbsp;
-## Wintersky
-
-* `Wintersky.emitter: Array` List of all emitters
-* `Wintersky.space: three.js Object3D` Global particle space. Add this to your scene.
-
-### `Wintersky.updateFacingRotation(camera)`
-
-Updates the particle facing rotation for all emitters
-* `camera: Camera` three.js camera to orient the particle towards
-
-### `Wintersky.fetchTexture( config )`
-
-Method to provide visuals for a texture. Null by default. Gets called by configs if the texture is updated. Should return a data URL.
-* `config: Config` Particle config that is requesting the texture
-
-
-### Global Options
-
-* `Wintersky.global_options`
-	* `max_emitter_particles: Number` Maximum amount of particles per emitter
-	* `tick_rate: Number` Emitter tick rate per second. 
-	* `loop_mode: String` Default emitter loop mode
-	* `parent_mode: String` Default emitter parent mode
-	* `scale: Number` Emitter scale. The default is 1 for block space. Set to 16 to run in a pixel space environment like Blockbench.

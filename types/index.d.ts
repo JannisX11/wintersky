@@ -225,9 +225,6 @@ export class Scene {
 	public emitters: Emitter[]
 	public global_options: GlobalOptions
 
-	public static Emitter: typeof Emitter
-	public static Config: typeof Config
-
 	constructor(options?: WinterskyOptions)
 
 	/**
