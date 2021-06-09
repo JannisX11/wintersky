@@ -43,6 +43,7 @@ class Particle {
 
 		this.speed = new THREE.Vector3();
 		this.acceleration = new THREE.Vector3();
+		this.facing_direction = new THREE.Vector3();
 
 		this.add()
 	}
@@ -292,6 +293,10 @@ class Particle {
 			this.rotation = MathUtil.degToRad(this.emitter.calculate(this.emitter.config.particle_rotation_rotation, params));
 		}
 		
+		// Facing Direction
+		if (this.emitter.config.particle_appearance_facing_camera_mode.substr(0, 9) == 'direction' && this.emitter.config.particle_appearance_direction_mode == 'custom') {
+			this.facing_direction.copy(this.emitter.calculate(this.emitter.config.particle_appearance_direction, params));
+		}
 
 		if (!jump) {
 			//Size

@@ -70,8 +70,10 @@ class Config {
 		this.emitter_rate_mode = 'steady';
 		this.emitter_lifetime_mode = 'looping';
 		this.emitter_shape_mode = 'point';
-		this.particle_appearance_facing_camera_mode = 'rotate_xyz';
 		this.particle_appearance_material = 'particles_alpha';
+		this.particle_appearance_facing_camera_mode = 'rotate_xyz';
+		this.particle_appearance_direction_mode = 'derive_from_velocity';
+		this.particle_appearance_speed_threshold = 0.01;
 		this.particle_direction_mode = 'outwards';
 		this.particle_motion_mode = 'dynamic';
 		this.particle_rotation_mode = 'dynamic';
@@ -311,24 +313,32 @@ class Config {
 			if (comp('particle_appearance_billboard')) {
 				this.set('particle_appearance_size', comp('particle_appearance_billboard').size);
 				this.set('particle_appearance_facing_camera_mode', comp('particle_appearance_billboard').facing_camera_mode);
-				var uv_tag = comp('particle_appearance_billboard').uv;
-				if (uv_tag) {
-					if (uv_tag.texture_width) {
-						this.set('particle_texture_size', [uv_tag.texture_width, uv_tag.texture_height]);
+
+				var {direction, uv} = comp('particle_appearance_billboard');
+
+				if (direction) {
+					this.set('particle_appearance_direction_mode', direction.mode);
+					this.set('particle_appearance_speed_threshold', direction.min_speed_threshold);
+					this.set('particle_appearance_direction', direction.custom_direction);
+				}
+
+				if (uv) {
+					if (uv.texture_width) {
+						this.set('particle_texture_size', [uv.texture_width, uv.texture_height]);
 					}
-					if (uv_tag.flipbook) {
+					if (uv.flipbook) {
 						this.set('particle_texture_mode', 'animated');
-						this.set('particle_texture_uv', uv_tag.flipbook.base_UV);
-						this.set('particle_texture_uv_size', uv_tag.flipbook.size_UV);
-						this.set('particle_texture_uv_step', uv_tag.flipbook.step_UV);
-						this.set('particle_texture_frames_per_second', uv_tag.flipbook.frames_per_second);
-						this.set('particle_texture_max_frame', uv_tag.flipbook.max_frame);
-						this.set('particle_texture_stretch_to_lifetime', uv_tag.flipbook.stretch_to_lifetime);
-						this.set('particle_texture_loop', uv_tag.flipbook.loop);
+						this.set('particle_texture_uv', uv.flipbook.base_UV);
+						this.set('particle_texture_uv_size', uv.flipbook.size_UV);
+						this.set('particle_texture_uv_step', uv.flipbook.step_UV);
+						this.set('particle_texture_frames_per_second', uv.flipbook.frames_per_second);
+						this.set('particle_texture_max_frame', uv.flipbook.max_frame);
+						this.set('particle_texture_stretch_to_lifetime', uv.flipbook.stretch_to_lifetime);
+						this.set('particle_texture_loop', uv.flipbook.loop);
 					} else {
 						this.set('particle_texture_mode', 'static');
-						this.set('particle_texture_uv', uv_tag.uv);
-						this.set('particle_texture_uv_size', uv_tag.uv_size);
+						this.set('particle_texture_uv', uv.uv);
+						this.set('particle_texture_uv_size', uv.uv_size);
 					}
 				}
 			}
@@ -455,8 +465,11 @@ Config.types = {
 	emitter_shape_plane_normal: {type: 'molang', array: true, dimensions: 3},
 	emitter_shape_surface_only: {type: 'boolean'},
 	particle_appearance_size: {type: 'molang', array: true, dimensions: 2},
-	particle_appearance_facing_camera_mode: {type: 'string'},
 	particle_appearance_material: {type: 'string'},
+	particle_appearance_facing_camera_mode: {type: 'string'},
+	particle_appearance_direction_mode: {type: 'string'},
+	particle_appearance_speed_threshold: {type: 'number'},
+	particle_appearance_direction: {type: 'molang', array: true, dimensions: 3},
 	particle_direction_mode: {type: 'string'},
 	particle_direction_direction: {type: 'molang', array: true, dimensions: 3},
 	particle_motion_mode: {type: 'string'},

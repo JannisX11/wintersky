@@ -167,6 +167,18 @@ class Emitter {
 
 		this.particles.forEach(p => {
 
+			if (this.config.particle_appearance_facing_camera_mode.substr(0, 9) == 'direction') {
+				if (this.config.particle_appearance_direction_mode == 'custom') {
+					vec.copy(p.facing_direction).normalize();
+				} else {
+					if (p.speed.length() >= (this.config.particle_appearance_speed_threshold || 0.01)) {
+						vec.copy(p.speed).normalize();
+					} else {
+						vec.set(0, 0, 0);
+					}
+				}
+			}
+
 			switch (this.config.particle_appearance_facing_camera_mode) {
 				case 'lookat_xyz':
 					p.mesh.lookAt(camera.position)
@@ -189,16 +201,16 @@ class Emitter {
 					p.mesh.quaternion.premultiply(world_quat_inverse);
 					break;
 				case 'direction_x':
-					var q = quat.setFromUnitVectors(Normals.x, vec.copy(p.speed).normalize())
-					p.mesh.rotation.setFromQuaternion(q);
+					quat.setFromUnitVectors(Normals.x, vec);
+					p.mesh.rotation.setFromQuaternion(quat);
 					break;
 				case 'direction_y':
-					var q = quat.setFromUnitVectors(Normals.y, vec.copy(p.speed).normalize())
-					p.mesh.rotation.setFromQuaternion(q);
+					quat.setFromUnitVectors(Normals.y, vec);
+					p.mesh.rotation.setFromQuaternion(quat);
 					break;
 				case 'direction_z':
-					var q = quat.setFromUnitVectors(Normals.z, vec.copy(p.speed).normalize())
-					p.mesh.rotation.setFromQuaternion(q);
+					quat.setFromUnitVectors(Normals.z, vec);
+					p.mesh.rotation.setFromQuaternion(quat);
 					break;
 				case 'emitter_transform_xy':
 					p.mesh.rotation.set(0, 0, 0);
