@@ -168,6 +168,9 @@ class Emitter {
 		this.particles.forEach(p => {
 
 			if (this.config.particle_appearance_facing_camera_mode.substr(0, 9) == 'direction') {
+				if (p.mesh.rotation.order !== 'YXZ') {
+					p.mesh.rotation.order = 'YXZ';
+				}
 				if (this.config.particle_appearance_direction_mode == 'custom') {
 					vec.copy(p.facing_direction).normalize();
 				} else {
@@ -201,16 +204,19 @@ class Emitter {
 					p.mesh.quaternion.premultiply(world_quat_inverse);
 					break;
 				case 'direction_x':
-					quat.setFromUnitVectors(Normals.x, vec);
-					p.mesh.rotation.setFromQuaternion(quat);
+					var y = Math.atan2(vec.x, vec.z);
+					var z = Math.atan2(vec.y, Math.sqrt(Math.pow(vec.x, 2) + Math.pow(vec.z, 2)));
+					p.mesh.rotation.set(0, y - Math.PI/2, z)
 					break;
 				case 'direction_y':
-					quat.setFromUnitVectors(Normals.y, vec);
-					p.mesh.rotation.setFromQuaternion(quat);
+					var y = Math.atan2(vec.x, vec.z);
+					var x = Math.atan2(vec.y, Math.sqrt(Math.pow(vec.x, 2) + Math.pow(vec.z, 2)));
+					p.mesh.rotation.set(x - Math.PI/2, y - Math.PI, 0)
 					break;
 				case 'direction_z':
-					quat.setFromUnitVectors(Normals.z, vec);
-					p.mesh.rotation.setFromQuaternion(quat);
+					var y = Math.atan2(vec.x, vec.z);
+					var x = Math.atan2(vec.y, Math.sqrt(Math.pow(vec.x, 2) + Math.pow(vec.z, 2)));
+					p.mesh.rotation.set(-x, y, 0)
 					break;
 				case 'emitter_transform_xy':
 					p.mesh.rotation.set(0, 0, 0);
@@ -221,6 +227,9 @@ class Emitter {
 				case 'emitter_transform_yz':
 					p.mesh.rotation.set(0, Math.PI/2, 0);
 					break;
+			}
+			if (Math.abs(vec.x) == 1 || Math.abs(vec.y) == 1 || Math.abs(vec.z) == 1) {
+				p.mesh.rotation.x += Math.PI;	
 			}
 			p.mesh.rotation.z += p.rotation||0;
 		})
