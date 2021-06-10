@@ -87,6 +87,7 @@ class Emitter {
 		this.enabled = false;
 		this.loop_mode = options.loop_mode || scene.global_options.loop_mode;
 		this.parent_mode = options.parent_mode || scene.global_options.parent_mode;
+		this.ground_collision = typeof options.ground_collision == 'boolean' ? options.ground_collision : scene.global_options.ground_collision;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
 		this.tick_values = {};
 		this.creation_values = {};

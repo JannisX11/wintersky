@@ -12,10 +12,11 @@ class Scene {
 		this._fetchTexture = options.fetchTexture
 
 		this.global_options = {
-			max_emitter_particles: 30000,
-			tick_rate: 30,
-			loop_mode: 'auto',
-			parent_mode: 'world',
+			max_emitter_particles: options.max_emitter_particles || 30000,
+			tick_rate: options.tick_rate || 30,
+			loop_mode: options.loop_mode || 'auto',
+			parent_mode: options.parent_mode || 'world',
+			ground_collision: options.ground_collision != false,
 			_scale: 1,
 		}
 		Object.defineProperty(this.global_options, 'scale', {

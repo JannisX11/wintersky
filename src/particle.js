@@ -232,8 +232,11 @@ class Particle {
 				}
 			}
 			if (
-				(!this.emitter.config.particle_collision_enabled && this.emitter.config.particle_collision_collision_radius)
-				|| this.emitter.calculate(this.emitter.config.particle_collision_enabled, params)
+				this.emitter.ground_collision &&
+				(
+					(!this.emitter.config.particle_collision_enabled && this.emitter.config.particle_collision_collision_radius)
+					|| this.emitter.calculate(this.emitter.config.particle_collision_enabled, params)
+				)
 			) {
 				// Collision
 				let drag = this.emitter.config.particle_collision_collision_drag;
