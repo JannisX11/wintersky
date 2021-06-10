@@ -50,7 +50,7 @@ Creates a new scene, which can hold multiple emitters
 
 ### Properties
 
-* `emitter: Array` List of all emitters
+* `emitters: Array` List of all emitters
 * `space: three.js Object3D` Global particle space. Add this to your three.js scene.
 * `global_options: Object`
 	* `max_emitter_particles: Number` Maximum amount of particles per emitter
