@@ -157,7 +157,8 @@ class Particle {
 			this.position.y *= -1;
 			this.speed.x *= -1;
 			this.speed.y *= -1;
-		} else if (this.emitter.config.space_local_position && !this.emitter.config.space_local_rotation) {
+		}
+		if (this.emitter.parent_mode != 'world' && this.emitter.config.space_local_position && !this.emitter.config.space_local_rotation) {
 			this.speed.x *= -1;
 			this.speed.z *= -1;
 		}
@@ -297,8 +298,13 @@ class Particle {
 		}
 		
 		// Facing Direction
-		if (this.emitter.config.particle_appearance_facing_camera_mode.substr(0, 9) == 'direction' && this.emitter.config.particle_appearance_direction_mode == 'custom') {
-			this.facing_direction.copy(this.emitter.calculate(this.emitter.config.particle_appearance_direction, params));
+		if (this.emitter.config.particle_appearance_facing_camera_mode.substr(0, 9) == 'direction') {
+			if (this.emitter.config.particle_appearance_direction_mode == 'custom') {
+				this.facing_direction.copy(this.emitter.calculate(this.emitter.config.particle_appearance_direction, params)).normalize();
+
+			} else if (this.speed.length() >= (this.emitter.config.particle_appearance_speed_threshold || 0.01)) {
+				this.facing_direction.copy(this.speed).normalize();
+			}
 		}
 
 		if (!jump) {
@@ -318,11 +324,11 @@ class Particle {
 				}
 				if (Math.floor(this.loop_time*fps) > this.current_frame) {
 					this.current_frame = Math.floor(this.loop_time*fps);
-					if (max_frame && this.current_frame > max_frame) {
+					if (max_frame && this.current_frame >= max_frame) {
 						if (this.emitter.config.particle_texture_loop) {
 							this.current_frame = 0;
 							this.loop_time = 0;
-							this.setFrame(this.current_frame);
+							this.setFrame(0);
 						}
 					} else {
 						this.setFrame(this.current_frame);

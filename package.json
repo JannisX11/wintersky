@@ -1,6 +1,6 @@
 {
   "name": "wintersky",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Particle effect renderer based on three.js and the Minecraft Bedrock particle format",
   "main": "dist/wintersky.cjs.js",
   "module": "dist/wintersky.esm.js",

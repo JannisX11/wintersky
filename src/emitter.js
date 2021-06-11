@@ -172,15 +172,7 @@ class Emitter {
 				if (p.mesh.rotation.order !== 'YXZ') {
 					p.mesh.rotation.order = 'YXZ';
 				}
-				if (this.config.particle_appearance_direction_mode == 'custom') {
-					vec.copy(p.facing_direction).normalize();
-				} else {
-					if (p.speed.length() >= (this.config.particle_appearance_speed_threshold || 0.01)) {
-						vec.copy(p.speed).normalize();
-					} else {
-						vec.set(0, 0, 0);
-					}
-				}
+				vec.copy(p.facing_direction);
 			}
 
 			switch (this.config.particle_appearance_facing_camera_mode) {
