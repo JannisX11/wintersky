@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import Wintersky from './wintersky';
 import Config from './config';
 import Particle from './particle';
-import { MathUtil, Normals, removeFromArray } from './util';
+import { MathUtil, removeFromArray } from './util';
 
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
@@ -173,6 +173,13 @@ class Emitter {
 					p.mesh.rotation.order = 'YXZ';
 				}
 				vec.copy(p.facing_direction);
+				
+				if (vec.y == 1) {
+					vec.y = -1;
+				} else if (vec.y == -1) {
+					vec.y = 1;
+					vec.z = -0.00001;
+				}
 			}
 
 			switch (this.config.particle_appearance_facing_camera_mode) {
@@ -220,9 +227,6 @@ class Emitter {
 				case 'emitter_transform_yz':
 					p.mesh.rotation.set(0, Math.PI/2, 0);
 					break;
-			}
-			if (Math.abs(vec.x) == 1 || Math.abs(vec.y) == 1 || Math.abs(vec.z) == 1) {
-				p.mesh.rotation.x += Math.PI;	
 			}
 			p.mesh.rotation.z += p.rotation||0;
 		})
