@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "molangjs": "^1.4.0",
-    "three": "^0.127.0",
+    "three": "^0.137.0",
     "tinycolor2": "^1.4.2"
   }
 }
