@@ -295,12 +295,12 @@ class Config {
 
 			if (comp('particle_lifetime_expression')) {
 				this.set('particle_lifetime_mode', 'expression');
-				if (comp('particle_lifetime_expression').expiration_expression) {
-					this.set('particle_lifetime_mode', 'expression');
-					this.set('particle_lifetime_expiration_expression', comp('particle_lifetime_expression').expiration_expression);
-				} else {
+				if (comp('particle_lifetime_expression').max_lifetime) {
 					this.set('particle_lifetime_mode', 'time');
 					this.set('particle_lifetime_max_lifetime', comp('particle_lifetime_expression').max_lifetime);
+				} else {
+					this.set('particle_lifetime_mode', 'expression');
+					this.set('particle_lifetime_expiration_expression', comp('particle_lifetime_expression').expiration_expression || 0);
 				}
 			}
 			if (comp('particle_expire_if_in_blocks') instanceof Array) {

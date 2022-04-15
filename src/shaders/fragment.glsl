@@ -9,7 +9,8 @@ void main(void) {
 	vec4 tColor = texture2D(map, vUv);
 
 	if (materialType == 0) {
-		if (tColor.a < 0.05) discard;
+		if (tColor.a < 0.5) discard;
+		tColor.a = 1.0;
 
 	} else if (materialType == 1) {
 		tColor.a = tColor.a * vColor.a;
