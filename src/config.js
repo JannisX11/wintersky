@@ -81,7 +81,8 @@ class Config {
 		this.particle_lifetime_mode = 'time';
 		this.particle_color_mode = 'static';
 
-		this.emitter_rate_rate = '1';
+		this.emitter_rate_rate = '4';
+		this.emitter_rate_amount = '1';
 		this.emitter_rate_maximum = '100';
 		this.emitter_lifetime_active_time = '1';
 		this.particle_appearance_size = ['0.2', '0.2'];
@@ -130,11 +131,23 @@ class Config {
 					range: (json_curve.horizontal_range || 0).toString(),
 					nodes: []
 				};
-				if (json_curve.nodes && json_curve.nodes.length) {
+				if (json_curve.nodes instanceof Array && json_curve.nodes.length) {
 					json_curve.nodes.forEach(value => {
-						value = parseFloat(value)||0;
-						new_curve.nodes.push(value);
+						let point = parseFloat(value)||0;
+						new_curve.nodes.push(point);
 					})
+				} else if (typeof json_curve.nodes == 'object' && json_curve.type == 'bezier_chain') {
+					for (let key in json_curve.nodes) {
+						let node = json_curve.nodes[key];
+						let point = {
+							time: parseFloat(key),
+							left_value: parseFloat(node.left_value||node.value) || 0,
+							right_value: parseFloat(node.right_value||node.value) || 0,
+							left_slope: parseFloat(node.left_slope||node.slope) || 0,
+							right_slope: parseFloat(node.right_slope||node.slope) || 0,
+						};
+						new_curve.nodes.push(point);
+					}
 				}
 				this.curves[key] = new_curve;
 			}

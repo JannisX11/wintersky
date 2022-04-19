@@ -41,9 +41,43 @@ function calculateCurve(emitter, curve, params) {
 		position *= segments
 		var pso = (position+1)/(segments+2)
 		return spline.getPoint(pso).y;
+
+	} else if (curve.mode == 'bezier') {
+
+		var vectors = [];
+		curve.nodes.forEach((val, i) => {
+			vectors.push(new THREE.Vector2(i/3, val))
+		})
+		var spline = new THREE.CubicBezierCurve(...vectors);
+
+		return spline.getPoint(position).y;
+
+	} else if (curve.mode == 'bezier_chain') {
+		
+		let sorted_nodes = curve.nodes.slice().sort((a, b) => a.time - b.time);
+		let i = 0;
+		while (i < sorted_nodes.length) {
+			if (sorted_nodes[i].time > position) break;
+			i++;
+		}
+		let before = sorted_nodes[i-1];
+		let after = sorted_nodes[i];
+
+		if (!before) before = {time: 0, right_value: 0, right_slope: 0}
+		if (!after)  after  = {time: 1, right_value: 0, right_slope: 0}
+
+		let time_diff = after.time - before.time;
+		var vectors = [
+			new THREE.Vector2(before.time + time_diff * (0/3), before.right_value),
+			new THREE.Vector2(before.time + time_diff * (1/3), before.right_value + before.right_slope * (1/3)),
+			new THREE.Vector2(before.time + time_diff * (2/3), after.left_value - after.left_slope * (1/3)),
+			new THREE.Vector2(before.time + time_diff * (3/3), after.left_value),
+		];
+		var spline = new THREE.CubicBezierCurve(...vectors);
+
+		return spline.getPoint((position-before.time) / time_diff).y;
 	}
 }
-
 
 class Emitter {
 	constructor(scene, config, options = 0) {
@@ -262,18 +296,6 @@ class Emitter {
 		for (var line of this.config.variables_tick_vars) {
 			this.Molang.parse(line);
 		}
-		// Spawn steady particles
-		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
-			var p_this_tick = this.calculate(this.config.emitter_rate_rate, params)/tick_rate
-			var x = 1/p_this_tick;
-			var c_f = Math.round(this.age*tick_rate)
-			if (c_f % Math.round(x) == 0) {
-				p_this_tick = Math.ceil(p_this_tick)
-			} else {
-				p_this_tick = Math.floor(p_this_tick)
-			}
-			this.spawnParticles(p_this_tick)
-		}
 		// Material
 		if (!jump) {
 			this.material.uniforms.materialType.value = materialTypes.indexOf(this.config.particle_appearance_material)
@@ -285,6 +307,19 @@ class Emitter {
 
 		this.age += 1/tick_rate;
 		this.view_age += 1/tick_rate;
+
+		// Spawn steady particles
+		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
+			var p_this_tick = this.calculate(this.config.emitter_rate_rate, params)/tick_rate
+			var x = 1/p_this_tick;
+			var c_f = Math.round(this.age*tick_rate);
+			if (c_f % Math.round(x) == 0) {
+				p_this_tick = Math.ceil(p_this_tick)
+			} else {
+				p_this_tick = Math.floor(p_this_tick)
+			}
+			this.spawnParticles(p_this_tick)
+		}
 
 		if (this.config.emitter_lifetime_mode === 'expression') {
 			//Expressions
