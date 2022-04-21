@@ -13,6 +13,14 @@ function parseColor(input) {
 		if (input.length < 9) {
 			input = '#ff' + input.substr(1, 6);
 		}
+	} else if (input instanceof Array) {
+		return new tinycolor({
+			r: (input[0] || 0) * 255,
+			g: (input[1] || 0) * 255,
+			b: (input[2] || 0) * 255,
+			a: (typeof input[3] == 'number' ? input[3] : 1),
+		}).toHex8String();
+
 	} else {
 		input = new tinycolor(input).toHex8String();
 	}
@@ -268,6 +276,8 @@ class Config {
 					this.set('particle_rotation_rotation_acceleration', rotation_acceleration);
 					this.set('particle_rotation_rotation_drag_coefficient', rotation_drag_coefficient);
 				}
+			} else {
+				this.set('particle_motion_mode', 'static');
 			}
 			if (comp('particle_motion_parametric')) {
 				let relative_position = comp('particle_motion_parametric').relative_position;
