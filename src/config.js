@@ -40,12 +40,13 @@ class Config {
 		this.reset()
 		this.onTextureUpdate = null;
 
+		if (options.path) this.set('file_path', options.path);
+		
 		if (config && config.particle_effect) {
 			this.setFromJSON(config);
 		} else if (typeof config == 'object') {
 			Object.assign(this, config);
 		}
-		if (options.path) this.set('file_path', options.path);
 	}
 	reset() {
 		this.texture.image.src = MissingTex;
@@ -86,8 +87,9 @@ class Config {
 		this.particle_motion_mode = 'dynamic';
 		this.particle_rotation_mode = 'dynamic';
 		this.particle_texture_mode = 'static';
-		this.particle_lifetime_mode = 'time';
 		this.particle_color_mode = 'static';
+		this.particle_color_interpolant = 'v.particle_age / v.particle_lifetime';
+		this.particle_color_range = 1;
 
 		this.emitter_rate_rate = '4';
 		this.emitter_rate_amount = '1';
@@ -317,14 +319,10 @@ class Config {
 			}
 
 			if (comp('particle_lifetime_expression')) {
-				this.set('particle_lifetime_mode', 'expression');
 				if (comp('particle_lifetime_expression').max_lifetime) {
-					this.set('particle_lifetime_mode', 'time');
 					this.set('particle_lifetime_max_lifetime', comp('particle_lifetime_expression').max_lifetime);
-				} else {
-					this.set('particle_lifetime_mode', 'expression');
-					this.set('particle_lifetime_expiration_expression', comp('particle_lifetime_expression').expiration_expression || 0);
 				}
+				this.set('particle_lifetime_expiration_expression', comp('particle_lifetime_expression').expiration_expression || 0);
 			}
 			if (comp('particle_expire_if_in_blocks') instanceof Array) {
 				this.set('particle_lifetime_expire_in', comp('particle_expire_if_in_blocks'));
@@ -507,7 +505,6 @@ Config.types = {
 	particle_rotation_rotation_acceleration: {type: 'molang'},
 	particle_rotation_rotation_drag_coefficient: {type: 'molang'},
 	particle_rotation_rotation: {type: 'molang'},
-	particle_lifetime_mode: {type: 'string'},
 	particle_lifetime_max_lifetime: {type: 'molang'},
 	particle_lifetime_kill_plane: {type: 'number', array: true, dimensions: 4},
 	particle_lifetime_expiration_expression: {type: 'molang'},

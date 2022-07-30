@@ -188,15 +188,13 @@ class Particle {
 		//Lifetime
 		this.age += step;
 		this.loop_time += step;
-		if (this.emitter.config.particle_lifetime_mode === 'time') {
-			if (this.age > this.lifetime) {
-				this.remove();
-			}
-		} else {
-			if (this.emitter.calculate(this.emitter.config.particle_lifetime_expiration_expression, params)) {
-				this.remove();
-			}
+		if (this.lifetime && this.age > this.lifetime) {
+			this.remove();
 		}
+		if (this.emitter.calculate(this.emitter.config.particle_lifetime_expiration_expression, params)) {
+			this.remove();
+		}
+		
 		//Movement
 		if (this.emitter.config.particle_motion_mode === 'dynamic') {
 			//Position

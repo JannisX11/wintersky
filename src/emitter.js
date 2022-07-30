@@ -8,6 +8,7 @@ import { MathUtil, removeFromArray } from './util';
 
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
+import EventClass from './event_class';
 
 const dummy_vec = new THREE.Vector3();
 const materialTypes = ['particles_alpha', 'particles_blend', 'particles_opaque']
@@ -79,8 +80,9 @@ function calculateCurve(emitter, curve, params) {
 	}
 }
 
-class Emitter {
+class Emitter extends EventClass {
 	constructor(scene, config, options = 0) {
+		super();
 		this.scene = scene
 		scene.emitters.push(this);
 
@@ -273,7 +275,8 @@ class Emitter {
 		this.enabled = true;
 		this.initialized = true;
 		this.scene.space.add(this.global_space);
-		var params = this.params()
+		var params = this.params();
+		this.Molang.resetVariables();
 		this.active_time = this.calculate(this.config.emitter_lifetime_active_time, params)
 		this.sleep_time = this.calculate(this.config.emitter_lifetime_sleep_time, params)
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
@@ -282,6 +285,8 @@ class Emitter {
 		for (var line of this.config.variables_creation_vars) {
 			this.Molang.parse(line);
 		}
+
+		this.dispatchEvent('start', {params})
 
 		if (this.config.emitter_rate_mode === 'instant') {
 			this.spawnParticles(this.calculate(this.config.emitter_rate_amount, params))
@@ -296,6 +301,8 @@ class Emitter {
 		for (var line of this.config.variables_tick_vars) {
 			this.Molang.parse(line);
 		}
+		this.dispatchEvent('tick', {params})
+
 		// Material
 		if (!jump) {
 			this.material.uniforms.materialType.value = materialTypes.indexOf(this.config.particle_appearance_material)
@@ -320,6 +327,7 @@ class Emitter {
 			}
 			this.spawnParticles(p_this_tick)
 		}
+		this.dispatchEvent('ticked', {params, tick_rate})
 
 		if (this.config.emitter_lifetime_mode === 'expression') {
 			//Expressions
@@ -353,14 +361,15 @@ class Emitter {
 				particle.remove();
 			});
 		}
+		this.dispatchEvent('stop', {})
 		return this;
 	}
 	jumpTo(second) {
 		let {tick_rate} = this.scene.global_options;
 		let old_time = Math.round(this.view_age * tick_rate)
 		let new_time = Math.round(second * tick_rate);
-		if (this.loop_mode != 'once') {
-			new_time = Math.clamp(new_time, 0, Math.round(this.active_time * tick_rate) - 1);
+		if (this.loop_mode == 'looping' || (this.loop_mode == 'auto' && this.config.emitter_lifetime_mode == 'looping')) {
+			new_time = new_time % (Math.round(this.active_time * tick_rate) - 1);
 		}
 		if (old_time == new_time) return;
 		if (new_time < old_time) {
