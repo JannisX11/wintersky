@@ -1,6 +1,6 @@
 {
   "name": "wintersky",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Particle effect renderer based on three.js and the Minecraft Bedrock particle format",
   "main": "dist/wintersky.cjs.js",
   "module": "dist/wintersky.esm.js",
@@ -32,8 +32,8 @@
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
-    "molangjs": "^1.5.0",
-    "three": "^0.139.2",
+    "molangjs": "^1.5.2",
+    "three": "^0.147.0",
     "tinycolor2": "^1.4.2"
   }
 }

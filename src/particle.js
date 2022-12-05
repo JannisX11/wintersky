@@ -162,6 +162,10 @@ class Particle {
 			this.speed.x *= -1;
 			this.speed.z *= -1;
 		}
+		
+		if (this.emitter.config.emitter_shape_mode === 'entity_aabb') {
+			this.position.x += 1;
+		}
 
 		if (this.emitter.local_space.parent) {
 			if (this.emitter.parent_mode == 'locator') {
