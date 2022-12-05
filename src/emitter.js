@@ -4,19 +4,21 @@ import * as THREE from 'three';
 import Wintersky from './wintersky';
 import Config from './config';
 import Particle from './particle';
-import { MathUtil, removeFromArray } from './util';
+import { MathUtil, removeFromArray, Normals } from './util';
 
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
 import EventClass from './event_class';
 
 const dummy_vec = new THREE.Vector3();
+const dummy_object = new THREE.Object3D();
 const materialTypes = ['particles_alpha', 'particles_blend', 'particles_opaque']
 
 function calculateCurve(emitter, curve, params) {
 
 	var position = emitter.Molang.parse(curve.input, params);
 	var range = emitter.Molang.parse(curve.range, params);
+	if (curve.mode == 'bezier_chain') range = 1;
 
 	position = (position/range) || 0;
 	if (position === Infinity) position = 0;
@@ -198,13 +200,13 @@ class Emitter extends EventClass {
 		const vec = new THREE.Vector3();
 
 		let world_quat_inverse;
-		if (this.config.particle_appearance_facing_camera_mode.substr(0, 6) == 'rotate') {
+		if (this.config.particle_appearance_facing_camera_mode.substring(0, 6) == 'rotate' || true) {
 			world_quat_inverse = this.particles[0].mesh.parent.getWorldQuaternion(quat).invert();
 		}
 
 		this.particles.forEach(p => {
 
-			if (this.config.particle_appearance_facing_camera_mode.substr(0, 9) == 'direction') {
+			if (this.config.particle_appearance_facing_camera_mode.substring(0, 9) == 'direction') {
 				if (p.mesh.rotation.order !== 'YXZ') {
 					p.mesh.rotation.order = 'YXZ';
 				}
@@ -216,6 +218,12 @@ class Emitter extends EventClass {
 					vec.y = 1;
 					vec.z = -0.00001;
 				}
+			}
+			if (this.config.particle_appearance_facing_camera_mode == 'lookat_direction') {
+				if (p.mesh.rotation.order !== 'XYZ') {
+					p.mesh.rotation.order = 'XYZ';
+				}
+				vec.copy(p.facing_direction);
 			}
 
 			switch (this.config.particle_appearance_facing_camera_mode) {
@@ -253,6 +261,17 @@ class Emitter extends EventClass {
 					var y = Math.atan2(vec.x, vec.z);
 					var x = Math.atan2(vec.y, Math.sqrt(Math.pow(vec.x, 2) + Math.pow(vec.z, 2)));
 					p.mesh.rotation.set(-x, y, 0)
+					break;
+				case 'lookat_direction':
+					dummy_object.position.copy(p.mesh.position)
+					dummy_object.quaternion.setFromUnitVectors(Normals.x, vec);
+					vec.copy(camera.position);
+					p.mesh.parent.add(dummy_object);
+					dummy_object.updateMatrixWorld();
+					dummy_object.worldToLocal(vec);
+					p.mesh.parent.remove(dummy_object);
+					p.mesh.rotation.set(Math.atan2(-vec.y, vec.z), 0, 0, 'XYZ');
+					p.mesh.quaternion.premultiply(dummy_object.quaternion);
 					break;
 				case 'emitter_transform_xy':
 					p.mesh.rotation.set(0, 0, 0);

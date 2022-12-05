@@ -296,7 +296,7 @@ class Particle {
 		}
 		
 		// Facing Direction
-		if (this.emitter.config.particle_appearance_facing_camera_mode.substr(0, 9) == 'direction') {
+		if (this.emitter.config.particle_appearance_facing_camera_mode.substr(0, 9) == 'direction' || this.emitter.config.particle_appearance_facing_camera_mode == 'lookat_direction') {
 			if (this.emitter.config.particle_appearance_direction_mode == 'custom') {
 				this.facing_direction.copy(this.emitter.calculate(this.emitter.config.particle_appearance_direction, params)).normalize();
 
