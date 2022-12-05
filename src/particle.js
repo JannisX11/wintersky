@@ -185,6 +185,10 @@ class Particle {
 		var params = this.params()
 		let step = 1 / this.emitter.scene.global_options.tick_rate;
 
+		for (var entry of this.emitter.config.particle_render_expression) {
+			this.emitter.Molang.parse(entry, params);
+		}
+
 		//Lifetime
 		this.age += step;
 		this.loop_time += step;

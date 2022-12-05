@@ -320,6 +320,14 @@ class Emitter extends EventClass {
 		for (var line of this.config.variables_tick_vars) {
 			this.Molang.parse(line);
 		}
+		if (this.config.particle_update_expression.length) {
+			this.particles.forEach(p => {
+				let particle_params = p.params();
+				for (var entry of this.config.particle_update_expression) {
+					this.Molang.parse(entry, particle_params);
+				}
+			})
+		}
 		this.dispatchEvent('tick', {params})
 
 		// Material

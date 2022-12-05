@@ -251,6 +251,17 @@ class Config {
 				}
 			}
 
+			if (comp('particle_initialization')) {
+				var up_v = comp('particle_initialization').per_update_expression;
+				var rd_v = comp('particle_initialization').per_render_expression;
+				if (typeof up_v == 'string') {
+					this.particle_update_expression = up_v.replace(/;+$/, '').split(';');
+				}
+				if (typeof rd_v == 'string') {
+					this.particle_render_expression = rd_v.replace(/;+$/, '').split(';');
+				}
+			}
+
 			if (comp('particle_initial_spin')) {
 				this.set('particle_rotation_initial_rotation', comp('particle_initial_spin').rotation);
 				this.set('particle_rotation_rotation_rate', comp('particle_initial_spin').rotation_rate);
@@ -491,6 +502,8 @@ Config.types = {
 	particle_appearance_direction_mode: {type: 'string'},
 	particle_appearance_speed_threshold: {type: 'number'},
 	particle_appearance_direction: {type: 'molang', array: true, dimensions: 3},
+	particle_update_expression: {type: 'string', array: true},
+	particle_render_expression: {type: 'string', array: true},
 	particle_direction_mode: {type: 'string'},
 	particle_direction_direction: {type: 'molang', array: true, dimensions: 3},
 	particle_motion_mode: {type: 'string'},
