@@ -13,10 +13,10 @@ void main(void) {
 		tColor.a = 1.0;
 
 	} else if (materialType == 1) {
-		tColor.a = tColor.a * vColor.a;
+		tColor.a = 1.0;
 		
 	} else {
-		tColor.a = 1.0;
+		tColor.a = tColor.a * vColor.a;
 	}
 	
 	gl_FragColor = vec4(tColor.rgb * vColor.rgb, tColor.a);

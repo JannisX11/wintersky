@@ -12,7 +12,7 @@ import EventClass from './event_class';
 
 const dummy_vec = new THREE.Vector3();
 const dummy_object = new THREE.Object3D();
-const materialTypes = ['particles_alpha', 'particles_blend', 'particles_opaque']
+const materialTypes = ['particles_alpha', 'particles_opaque', 'particles_blend', 'particles_add']
 
 function calculateCurve(emitter, curve, params) {
 
@@ -332,7 +332,10 @@ class Emitter extends EventClass {
 
 		// Material
 		if (!jump) {
-			this.material.uniforms.materialType.value = materialTypes.indexOf(this.config.particle_appearance_material)
+			let material = this.config.particle_appearance_material;
+			this.material.uniforms.materialType.value = materialTypes.indexOf(material);
+			this.material.side = (material === 'particles_blend' || material === 'particles_add') ? THREE.DoubleSide : THREE.FrontSide;
+			this.material.blending = material === 'particles_add' ? THREE.AdditiveBlending : THREE.NormalBlending;
 		}
 		// Tick particles
 		this.particles.forEach(p => {
