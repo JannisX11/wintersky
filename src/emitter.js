@@ -14,7 +14,24 @@ const dummy_vec = new THREE.Vector3();
 const dummy_object = new THREE.Object3D();
 const materialTypes = ['particles_alpha', 'particles_opaque', 'particles_blend', 'particles_add']
 
-function calculateCurve(emitter, curve, params) {
+
+function createCurveSpline(curve) {
+	switch (curve.mode) {
+		case 'catmull_rom':
+			var vectors = [];
+			curve.nodes.forEach((val, i) => {
+				vectors.push(new THREE.Vector2(i-1, val))
+			})
+			return new THREE.SplineCurve(vectors);
+		case 'bezier':
+			var vectors = [];
+			curve.nodes.forEach((val, i) => {
+				vectors.push(new THREE.Vector2(i/3, val))
+			})
+			return new THREE.CubicBezierCurve(...vectors);
+	}
+}
+function calculateCurve(emitter, curve, curve_key, params) {
 
 	var position = emitter.Molang.parse(curve.input, params);
 	var range = emitter.Molang.parse(curve.range, params);
@@ -34,12 +51,10 @@ function calculateCurve(emitter, curve, params) {
 		return value;
 
 	} else if (curve.mode == 'catmull_rom') {
-		var vectors = [];
-		curve.nodes.forEach((val, i) => {
-			vectors.push(new THREE.Vector2(i-1, val))
-		})
-		var spline = new THREE.SplineCurve(vectors);
-
+		let spline = emitter._cached_curves[curve_key];
+		if (!spline) {
+			spline = emitter._cached_curves[curve_key] = createCurveSpline(curve);
+		}
 		var segments = curve.nodes.length-3;
 		position *= segments
 		var pso = (position+1)/(segments+2)
@@ -47,12 +62,10 @@ function calculateCurve(emitter, curve, params) {
 
 	} else if (curve.mode == 'bezier') {
 
-		var vectors = [];
-		curve.nodes.forEach((val, i) => {
-			vectors.push(new THREE.Vector2(i/3, val))
-		})
-		var spline = new THREE.CubicBezierCurve(...vectors);
-
+		let spline = emitter._cached_curves[curve_key];
+		if (!spline) {
+			spline = emitter._cached_curves[curve_key] = createCurveSpline(curve);
+		}
 		return spline.getPoint(position).y;
 
 	} else if (curve.mode == 'bezier_chain') {
@@ -92,7 +105,7 @@ class Emitter extends EventClass {
 
 		this.Molang = new Molang();
 		this.Molang.variableHandler = (key, params) => {
-			return this.config.curves[key] && calculateCurve(this, this.config.curves[key], params);
+			return this.config.curves[key] && calculateCurve(this, this.config.curves[key], key, params);
 		}
 
 		let global_scale = scene.global_options._scale;
@@ -129,6 +142,7 @@ class Emitter extends EventClass {
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
 		this.tick_values = {};
 		this.creation_values = {};
+		this._cached_curves = {};
 
 		this.updateMaterial();
 	}
@@ -315,6 +329,7 @@ class Emitter extends EventClass {
 	tick(jump) {
 		let params = this.params()
 		let { tick_rate } = this.scene.global_options;
+		this._cached_curves = {};
 
 		// Calculate tick values
 		for (var line of this.config.variables_tick_vars) {
