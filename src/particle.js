@@ -33,7 +33,7 @@ class Particle {
 	constructor(emitter) {
 		this.emitter = emitter;
 
-		this.geometry = new THREE.PlaneBufferGeometry(2, 2)
+		this.geometry = new THREE.PlaneGeometry(2, 2)
 		this.material = this.emitter.material;
 		this.mesh = new THREE.Mesh(this.geometry, this.material)
 		this.position = this.mesh.position;
