@@ -126,7 +126,7 @@ class Emitter extends EventClass {
 			},
 			vertexShader,
 			fragmentShader,
-			vertexColors: THREE.FaceColors,
+			vertexColors: true,
 			transparent: true,
 			alphaTest: 0.2
 		});
