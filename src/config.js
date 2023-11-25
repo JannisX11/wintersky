@@ -330,9 +330,7 @@ class Config {
 			}
 
 			if (comp('particle_lifetime_expression')) {
-				if (comp('particle_lifetime_expression').max_lifetime) {
-					this.set('particle_lifetime_max_lifetime', comp('particle_lifetime_expression').max_lifetime);
-				}
+				this.set('particle_lifetime_max_lifetime', comp('particle_lifetime_expression').max_lifetime || '');
 				this.set('particle_lifetime_expiration_expression', comp('particle_lifetime_expression').expiration_expression || 0);
 			}
 			if (comp('particle_expire_if_in_blocks') instanceof Array) {

@@ -422,8 +422,11 @@ class Emitter extends EventClass {
 		} else if (!this.initialized) {
 			this.start();
 		}
+		let last_view_age = this.view_age;
 		while (Math.round(this.view_age * tick_rate) < new_time-1) {
 			this.tick(true);
+			if (this.view_age <= last_view_age) break;
+			last_view_age = this.view_age;
 		}
 		this.tick(false);
 		return this;
