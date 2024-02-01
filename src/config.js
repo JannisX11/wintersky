@@ -103,18 +103,24 @@ class Config {
 	}
 	set(key, val) {
 		if (Config.types[key] == undefined || val == undefined || val == null) return;
-
+		
 		if (Config.types[key].array && val instanceof Array) {
 			if (Config.types[key].type == 'molang') {
 				val = val.map(v => v.toString());
 			}
 			this[key].splice(0, Infinity, ...val);
+		} else if (Config.types[key].array && Config.types[key].type == 'string' && typeof val == 'string') {
+			this[key].splice(0, Infinity, val);
 		} else if (typeof this[key] == 'string') {
 			this[key] = val.toString();
 		} else if (Config.types[key].type == 'number' && typeof val == 'number') {
 			this[key] = val;
 		} else if (Config.types[key].type == 'boolean') {
 			this[key] = !!val;
+		} else if (Config.types[key].type == 'object') {
+			for (let obj_key in val) {
+				this[key][obj_key] = val[obj_key];
+			}
 		}
 		return this;
 	}
@@ -122,6 +128,7 @@ class Config {
 
 		var comps = data.particle_effect.components;
 		var curves = data.particle_effect.curves;
+		var events = data.particle_effect.events;
 		var desc = data.particle_effect.description;
 		if (desc && desc.identifier) {
 			this.identifier = desc.identifier;
@@ -130,6 +137,12 @@ class Config {
 			this.set('particle_texture_path', desc.basic_render_parameters.texture);
 
 			this.set('particle_appearance_material', desc.basic_render_parameters.material);
+		}
+		if (typeof events == 'object') {
+			for (let id in events) {
+				let event = events[id];
+				this.events[id] = event;
+			}
 		}
 		if (curves) {
 			for (var key in curves) {
@@ -204,6 +217,14 @@ class Config {
 				this.set('emitter_lifetime_mode',  'expression');
 				this.set('emitter_lifetime_activation',  comp('emitter_lifetime_expression').activation_expression);
 				this.set('emitter_lifetime_expiration',  comp('emitter_lifetime_expression').expiration_expression);
+			}
+			if (comp('emitter_lifetime_events')) {
+				let l_e_comp = comp('emitter_lifetime_events');
+				this.set('emitter_events_creation', l_e_comp.creation_event);
+				this.set('emitter_events_expiration', l_e_comp.expiration_event);
+				this.set('emitter_events_distance', l_e_comp.travel_distance_events);
+				this.set('emitter_events_distance_looping', l_e_comp.looping_travel_distance_events);
+				this.set('emitter_events_timeline', l_e_comp.timeline);
 			}
 			var shape_component = comp('emitter_shape_point') || comp('emitter_shape_custom');
 			if (shape_component) {
@@ -317,6 +338,14 @@ class Config {
 				this.set('particle_collision_coefficient_of_restitution', comp('particle_motion_collision').coefficient_of_restitution);
 				this.set('particle_collision_collision_radius', comp('particle_motion_collision').collision_radius);
 				this.set('particle_collision_expire_on_contact', comp('particle_motion_collision').expire_on_contact);
+				if (comp('particle_motion_collision').events) {
+					let events = comp('particle_motion_collision').events;
+					if (events instanceof Array) {
+						this.set('particle_collision_events', events)
+					} else if (typeof events == 'object') {
+						this.set('particle_collision_events', [events]);
+					}
+				}
 			}
 			if (comp('particle_initial_speed') !== undefined) {
 				var c = comp('particle_initial_speed')
@@ -424,6 +453,12 @@ class Config {
 					this.set('particle_color_gradient', gradient_points)
 				}
 			}
+			if (comp('particle_lifetime_events')) {
+				let l_e_comp = comp('particle_lifetime_events');
+				this.set('particle_events_creation', l_e_comp.creation_event);
+				this.set('particle_events_expiration', l_e_comp.expiration_event);
+				this.set('particle_events_timeline', l_e_comp.timeline);
+			}
 		}
 
 		this.updateTexture();
@@ -473,6 +508,7 @@ Config.types = {
 
 	identifier: {type: 'string'},
 	file_path: {type: 'string'},
+	events: {type: 'object'},
 	curves: {type: 'object'},
 	space_local_position: {type: 'boolean'},
 	space_local_rotation: {type: 'boolean'},
@@ -488,6 +524,11 @@ Config.types = {
 	emitter_lifetime_sleep_time: {type: 'molang'},
 	emitter_lifetime_activation: {type: 'molang'},
 	emitter_lifetime_expiration: {type: 'molang'},
+	emitter_events_creation: {type: 'string', array: true},
+	emitter_events_expiration: {type: 'string', array: true},
+	emitter_events_distance: {type: 'string', array: true},
+	emitter_events_distance_looping: {type: 'string', array: true},
+	emitter_events_timeline: {type: 'object'},
 	emitter_shape_mode: {type: 'string'},
 	emitter_shape_offset: {type: 'molang', array: true, dimensions: 3},
 	emitter_shape_radius: {type: 'molang'},
@@ -544,6 +585,10 @@ Config.types = {
 	particle_collision_coefficient_of_restitution: {type: 'number'},
 	particle_collision_collision_radius: {type: 'number'},
 	particle_collision_expire_on_contact: {type: 'boolean'},
+	particle_collision_events: {type: 'object', array: true},
+	particle_events_creation: {type: 'string', array: true},
+	particle_events_expiration: {type: 'string', array: true},
+	particle_events_timeline: {type: 'object'},
 };
 Wintersky.Config = Config;
 

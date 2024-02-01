@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import Wintersky from './wintersky';
 import Config from './config';
 import Particle from './particle';
-import { MathUtil, removeFromArray, Normals } from './util';
+import { MathUtil, removeFromArray, Normals, getRandomFromWeightedList } from './util';
 
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
@@ -98,7 +98,8 @@ function calculateCurve(emitter, curve, curve_key, params) {
 class Emitter extends EventClass {
 	constructor(scene, config, options = 0) {
 		super();
-		this.scene = scene
+		this.scene = scene;
+		this.child_emitters = [];
 		scene.emitters.push(this);
 
 		this.config = config instanceof Config ? config : new Config(scene, config, options);
@@ -133,6 +134,8 @@ class Emitter extends EventClass {
 
 		this.particles = [];
 		this.dead_particles = [];
+		this.creation_time = 0;
+		this.parent_emitter = null;
 		this.age = 0;
 		this.view_age = 0;
 		this.enabled = false;
@@ -145,6 +148,15 @@ class Emitter extends EventClass {
 		this._cached_curves = {};
 
 		this.updateMaterial();
+	}
+	getActiveSpace() {
+		if (this.config.space_local_position && this.local_space.parent) {
+			// Add the particle to the local space object if local space is enabled and used
+			return this.local_space;
+		} else {
+			// Otherwise add to global space
+			return this.global_space;
+		}
 	}
 	clone() {
 		let clone = new Wintersky.Emitter(this.scene, this.config);
@@ -321,6 +333,10 @@ class Emitter extends EventClass {
 
 		this.dispatchEvent('start', {params})
 
+		for (let event_id of this.config.emitter_events_creation) {
+			this.emitter.runEvent(event_id);
+		}
+
 		if (this.config.emitter_rate_mode === 'instant') {
 			this.spawnParticles(this.calculate(this.config.emitter_rate_amount, params))
 		}
@@ -329,6 +345,7 @@ class Emitter extends EventClass {
 	tick(jump) {
 		let params = this.params()
 		let { tick_rate } = this.scene.global_options;
+		let step = 1/tick_rate;
 		this._cached_curves = {};
 
 		// Calculate tick values
@@ -357,8 +374,8 @@ class Emitter extends EventClass {
 			p.tick(jump)
 		})
 
-		this.age += 1/tick_rate;
-		this.view_age += 1/tick_rate;
+		this.age += step;
+		this.view_age += step;
 
 		// Spawn steady particles
 		if (this.enabled && this.config.emitter_rate_mode === 'steady') {
@@ -373,6 +390,19 @@ class Emitter extends EventClass {
 			this.spawnParticles(p_this_tick)
 		}
 		this.dispatchEvent('ticked', {params, tick_rate})
+
+		// Event timeline
+		for (let key in this.config.emitter_events_timeline) {
+			let time = parseFloat(key);
+			if (time > this.age - step && time <= this.age) {
+				this.runEvent(this.config.emitter_events_timeline[key]);
+			}
+		}
+
+		// Child emitters
+		this.child_emitters.forEach(e => {
+			e.tick(jump);
+		});
 
 		if (this.config.emitter_lifetime_mode === 'expression') {
 			//Expressions
@@ -406,7 +436,12 @@ class Emitter extends EventClass {
 				particle.remove();
 			});
 		}
+		this.child_emitters.forEach(e => e.delete());
+		this.child_emitters.splice(0);
 		this.dispatchEvent('stop', {})
+		for (let event_id of this.config.emitter_events_expiration) {
+			this.emitter.runEvent(event_id);
+		}
 		return this;
 	}
 	jumpTo(second) {
@@ -429,6 +464,12 @@ class Emitter extends EventClass {
 			last_view_age = this.view_age;
 		}
 		this.tick(false);
+		this.child_emitters.slice().forEach(e => {
+			if (e.creation_time < new_time) {
+				e.delete();
+				removeFromArray(this.child_emitters, e);
+			}
+		});
 		return this;
 	}
 
@@ -442,6 +483,7 @@ class Emitter extends EventClass {
 		this.tick_interval = setInterval(() => {
 			this.tick()
 		}, 1000 / this.scene.global_options.tick_rate)
+		//this.child_emitters.forEach(e => e.playLoop());
 		return this;
 	}
 	toggleLoop() {
@@ -449,12 +491,18 @@ class Emitter extends EventClass {
 		if (this.paused) {
 			clearInterval(this.tick_interval);
 			delete this.tick_interval;
+			/*this.child_emitters.forEach(e => {
+				clearInterval(e.tick_interval);
+				delete e.tick_interval;
+			});*/
 		} else {
 			this.playLoop();
+			//this.child_emitters.forEach(e => e.playLoop());
 		}
 		return this;
 	}
 	stopLoop() {
+		//this.child_emitters.forEach(e => e.stopLoop());
 		clearInterval(this.tick_interval);
 		delete this.tick_interval;
 		this.stop(true);
@@ -483,6 +531,8 @@ class Emitter extends EventClass {
 		return count;
 	}
 	delete() {
+		this.child_emitters.forEach(e => e.delete());
+		this.child_emitters.splice(0);
 		[...this.particles, ...this.dead_particles].forEach(particle => {
 			if (particle.mesh.parent) particle.mesh.parent.remove(particle.mesh);
 		})
@@ -491,6 +541,64 @@ class Emitter extends EventClass {
 		if (this.local_space.parent) this.local_space.parent.remove(this.local_space);
 		if (this.global_space.parent) this.global_space.parent.remove(this.global_space);
 		removeFromArray(this.scene.emitters, this);
+	}
+
+	// Events
+	runEvent(event_id, particle) {
+		this.dispatchEvent('event', {event_id, particle});
+
+		let event = this.config.events[event_id];
+		let runEventSubpart = (subpart) => {
+			if (subpart.sequence instanceof Array) {
+				for (let part2 of subpart.sequence) {
+					runEventSubpart(part2);
+				}
+			}
+			if (subpart.randomize instanceof Array) {
+				let picked_option = getRandomFromWeightedList(subpart.randomize);
+				if (picked_option) runEventSubpart(picked_option);
+			}
+
+			// Run event
+			if (subpart.particle_effect) {
+				let identifier = subpart.particle_effect.effect;
+				let config = this.scene.child_configs[identifier];
+				if (!this.scene.child_configs[identifier] && this.scene._fetchParticleFile) {
+					config = this.scene.child_configs[identifier] = new Config(this.scene);
+					let result = this.scene.fetchParticleFile(identifier);
+					if (result instanceof Promise) {
+						result.then(result2 => {
+							if (result2) {
+								config.setFromJSON(result2);
+							}
+						});
+					} else if (result) {
+						config.setFromJSON(result);
+					}
+				}
+				let emitter;
+				if (config) {
+					emitter = new Emitter(this.scene, config, {});
+					emitter.creation_time = this.age;
+					emitter.parent_emitter = this;
+					this.child_emitters.push(emitter);
+
+					// todo: implement types: "emitter", "emitter_bound", "particle", "particle_with_velocity"
+					let position = particle ? particle.position : this.getActiveSpace().position;
+					emitter.getActiveSpace().position.copy(position);
+					if (particle) {
+						//emitter.getActiveSpace().rotation.copy(particle.mesh.rotation);
+					}
+
+					emitter.start();
+				}
+				this.dispatchEvent('play_child_particle', {particle_effect: subpart.particle_effect, config, child_emitter: emitter, event_id});
+			}
+			if (subpart.sound_effect) {
+				this.dispatchEvent('play_sound', {sound_effect: subpart.sound_effect, particle, event_id});
+			}
+		}
+		if (event) runEventSubpart(event);
 	}
 }
 Wintersky.Emitter = Emitter;

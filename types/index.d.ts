@@ -215,6 +215,11 @@ export interface WinterskyOptions {
 	 * @param config Particle config that is requesting the texture
 	 */
 	fetchTexture?: null | ((config: Config) => Promise<string | undefined> | string | undefined)
+	/**
+	 * Method to fetch particle effects that are played by events. Null by default. Should return the content of a particle file as parsed JSON
+	 * @param config Particle config that is requesting the effect
+	 */
+	fetchParticleFile?: null | ((config: Config) => Promise<string | undefined> | string | undefined)
 }
 
 export class Scene {
@@ -234,6 +239,7 @@ export class Scene {
 	updateFacingRotation(camera: THREE.Camera): void
 
 	fetchTexture(config: Config): Promise<string | undefined> | string | undefined
+	fetchParticleFile(config: Config): Promise<string | undefined> | string | undefined
 }
 
 export as namespace Wintersky
