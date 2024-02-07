@@ -238,16 +238,13 @@ class Particle {
 				}
 			}
 			if (
-				this.emitter.ground_collision &&
-				(
-					(!this.emitter.config.particle_collision_enabled && this.emitter.config.particle_collision_collision_radius)
-					|| this.emitter.calculate(this.emitter.config.particle_collision_enabled, params)
-				)
+				this.emitter.ground_collision && this.emitter.config.particle_collision_toggle &&
+				(!this.emitter.config.particle_collision_enabled || this.emitter.calculate(this.emitter.config.particle_collision_enabled, params))
 			) {
 				// Collision
 				let drag = this.emitter.config.particle_collision_collision_drag;
 				let bounce = this.emitter.config.particle_collision_coefficient_of_restitution;
-				let radius = this.emitter.config.particle_collision_collision_radius;
+				let radius = Math.max(this.emitter.config.particle_collision_collision_radius, 0.0001);
 
 				let plane = collisionPlane;
 				let sphere = new THREE.Sphere(this.position, radius);

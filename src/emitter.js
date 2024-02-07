@@ -333,12 +333,16 @@ class Emitter extends EventClass {
 
 		this.dispatchEvent('start', {params})
 
+		this.updateMaterial();
+
 		for (let event_id of this.config.emitter_events_creation) {
-			this.emitter.runEvent(event_id);
+			this.runEvent(event_id);
 		}
 
 		if (this.config.emitter_rate_mode === 'instant') {
 			this.spawnParticles(this.calculate(this.config.emitter_rate_amount, params))
+		} else if (this.config.emitter_rate_mode === 'manual') {
+			this.spawnParticles(1);
 		}
 		return this;
 	}
@@ -364,10 +368,7 @@ class Emitter extends EventClass {
 
 		// Material
 		if (!jump) {
-			let material = this.config.particle_appearance_material;
-			this.material.uniforms.materialType.value = materialTypes.indexOf(material);
-			this.material.side = (material === 'particles_blend' || material === 'particles_add') ? THREE.DoubleSide : THREE.FrontSide;
-			this.material.blending = material === 'particles_add' ? THREE.AdditiveBlending : THREE.NormalBlending;
+			this.updateMaterial();
 		}
 		// Tick particles
 		this.particles.forEach(p => {
@@ -440,7 +441,7 @@ class Emitter extends EventClass {
 		this.child_emitters.splice(0);
 		this.dispatchEvent('stop', {})
 		for (let event_id of this.config.emitter_events_expiration) {
-			this.emitter.runEvent(event_id);
+			this.runEvent(event_id);
 		}
 		return this;
 	}
@@ -471,6 +472,12 @@ class Emitter extends EventClass {
 			}
 		});
 		return this;
+	}
+	updateMaterial() {
+		let material = this.config.particle_appearance_material;
+		this.material.uniforms.materialType.value = materialTypes.indexOf(material);
+		this.material.side = (material === 'particles_blend' || material === 'particles_add') ? THREE.DoubleSide : THREE.FrontSide;
+		this.material.blending = material === 'particles_add' ? THREE.AdditiveBlending : THREE.NormalBlending;
 	}
 
 	// Playback Loop
@@ -560,6 +567,9 @@ class Emitter extends EventClass {
 			}
 
 			// Run event
+			if (subpart.expression) {
+				this.Molang.parse(subpart.expression, this.params());
+			}
 			if (subpart.particle_effect) {
 				let identifier = subpart.particle_effect.effect;
 				let config = this.scene.child_configs[identifier];

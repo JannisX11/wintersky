@@ -72,6 +72,10 @@ class Config {
 						this[key].push(value);
 					}
 				}
+			} else if (type.type == 'object' && this[key]) {
+				for (let subkey in this[key]) {
+					delete this[key][subkey];
+				}
 			} else {
 				this[key] = value;
 			}
@@ -194,6 +198,10 @@ class Config {
 				this.space_local_position = comp('emitter_local_space').position;
 				this.space_local_rotation = comp('emitter_local_space').rotation;
 				this.space_local_velocity = comp('emitter_local_space').velocity;
+			}
+			if (comp('emitter_rate_manual')) {
+				this.set('emitter_rate_mode',  'manual');
+				this.set('emitter_rate_maximum',  comp('emitter_rate_manual').max_particles);
 			}
 			if (comp('emitter_rate_steady')) {
 				this.set('emitter_rate_mode',  'steady');
@@ -331,7 +339,7 @@ class Config {
 
 
 
-
+			this.set('particle_collision_toggle', comp('particle_motion_collision') != undefined);
 			if (comp('particle_motion_collision')) {
 				this.set('particle_collision_enabled', comp('particle_motion_collision').enabled);
 				this.set('particle_collision_collision_drag', comp('particle_motion_collision').collision_drag);
@@ -580,6 +588,7 @@ Config.types = {
 	particle_color_gradient: {type: 'object', array: true},
 	particle_color_expression: {type: 'molang', array: true, dimensions: 4},
 	particle_color_light: {type: 'boolean'},
+	particle_collision_toggle: {type: 'boolean'},
 	particle_collision_enabled: {type: 'molang'},
 	particle_collision_collision_drag: {type: 'number'},
 	particle_collision_coefficient_of_restitution: {type: 'number'},
