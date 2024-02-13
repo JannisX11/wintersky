@@ -230,9 +230,9 @@ class Config {
 				let l_e_comp = comp('emitter_lifetime_events');
 				this.set('emitter_events_creation', l_e_comp.creation_event);
 				this.set('emitter_events_expiration', l_e_comp.expiration_event);
+				this.set('emitter_events_timeline', l_e_comp.timeline);
 				this.set('emitter_events_distance', l_e_comp.travel_distance_events);
 				this.set('emitter_events_distance_looping', l_e_comp.looping_travel_distance_events);
-				this.set('emitter_events_timeline', l_e_comp.timeline);
 			}
 			var shape_component = comp('emitter_shape_point') || comp('emitter_shape_custom');
 			if (shape_component) {
@@ -534,8 +534,8 @@ Config.types = {
 	emitter_lifetime_expiration: {type: 'molang'},
 	emitter_events_creation: {type: 'string', array: true},
 	emitter_events_expiration: {type: 'string', array: true},
-	emitter_events_distance: {type: 'string', array: true},
-	emitter_events_distance_looping: {type: 'string', array: true},
+	emitter_events_distance: {type: 'object'},
+	emitter_events_distance_looping: {type: 'object', array: true},
 	emitter_events_timeline: {type: 'object'},
 	emitter_shape_mode: {type: 'string'},
 	emitter_shape_offset: {type: 'molang', array: true, dimensions: 3},

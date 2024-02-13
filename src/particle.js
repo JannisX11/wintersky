@@ -126,23 +126,28 @@ class Particle {
 		//Speed
 		this.speed.set(0, 0, 0);
 		var dir = this.emitter.config.particle_direction_mode;
-		if (dir == 'inwards' || dir == 'outwards') {
+		if (dir == 'outwards' && this.emitter.inherited_particle_speed) {
+			this.speed.copy(this.emitter.inherited_particle_speed);
 
-			if (this.emitter.config.emitter_shape_mode === 'point') {
-				this.speed.set(1, 0, 0).applyEuler(MathUtil.getRandomEuler())
-			} else {
-				this.speed.copy(this.position).normalize()
-				if (dir == 'inwards') {
-					this.speed.negate()
-				}
-			}
 		} else {
-			this.speed = this.emitter.calculate(this.emitter.config.particle_direction_direction, params).normalize()
+			if (dir == 'inwards' || dir == 'outwards') {
+
+				if (this.emitter.config.emitter_shape_mode === 'point') {
+					this.speed.set(1, 0, 0).applyEuler(MathUtil.getRandomEuler())
+				} else {
+					this.speed.copy(this.position).normalize()
+					if (dir == 'inwards') {
+						this.speed.negate()
+					}
+				}
+			} else {
+				this.speed = this.emitter.calculate(this.emitter.config.particle_direction_direction, params).normalize()
+			}
+			let linear_speed = this.emitter.calculate(this.emitter.config.particle_motion_linear_speed, params);
+			this.speed.x *= linear_speed;
+			this.speed.y *= linear_speed;
+			this.speed.z *= linear_speed;
 		}
-		var speed = this.emitter.calculate(this.emitter.config.particle_motion_linear_speed, params);
-		this.speed.x *= speed;
-		this.speed.y *= speed;
-		this.speed.z *= speed;
 
 		this.position.add(this.emitter.calculate(this.emitter.config.emitter_shape_offset, params))
 

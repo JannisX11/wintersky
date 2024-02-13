@@ -142,6 +142,7 @@ class Emitter extends EventClass {
 		this.loop_mode = options.loop_mode || scene.global_options.loop_mode;
 		this.parent_mode = options.parent_mode || scene.global_options.parent_mode;
 		this.ground_collision = typeof options.ground_collision == 'boolean' ? options.ground_collision : scene.global_options.ground_collision;
+		this.inherited_particle_speed = null;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
 		this.tick_values = {};
 		this.creation_values = {};
@@ -593,7 +594,11 @@ class Emitter extends EventClass {
 					emitter.parent_emitter = this;
 					this.child_emitters.push(emitter);
 
-					// todo: implement types: "emitter", "emitter_bound", "particle", "particle_with_velocity"
+					if (subpart.particle_effect.type == 'emitter_bound') {
+						emitter.parent_mode = this.parent_mode;
+					} else if (subpart.particle_effect.type == 'particle_with_velocity' && particle) {
+						emitter.inherited_particle_speed = new THREE.Vector3().copy(particle.speed);
+					}
 					let position = particle ? particle.position : this.getActiveSpace().position;
 					emitter.getActiveSpace().position.copy(position);
 					if (particle) {
