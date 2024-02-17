@@ -43,12 +43,20 @@ async function initializeApp() {
 	View.scene.add(View.grid);
 
 	resizeCanvas()
-	
+
 
 	// Initialize Particles
 	let content = await loadJSON('../examples/rainbow.particle.json');
 
-	View.wintersky = new Wintersky.Scene()
+	View.wintersky = new Wintersky.Scene({
+		// Setup event sub-emitters logic (optional)
+		async fetchParticleFile(identifier) {
+			if (identifier == 'snowstorm:drop_splash') {
+				let json = await loadJSON('../examples/drop_splash.particle.json');
+				return json;
+			}
+		}
+	})
 	View.emitter = new Wintersky.Emitter(View.wintersky, content);
 	View.scene.add(View.wintersky.space);
 

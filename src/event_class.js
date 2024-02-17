@@ -1,3 +1,5 @@
+import { removeFromArray } from "./util";
+
 export default class EventClass {
 	constructor() {
 		this.events = {};
@@ -15,11 +17,11 @@ export default class EventClass {
 		if (!this.events[event_name]) {
 			this.events[event_name] = []
 		}
-		this.events[event_name].safePush(cb)
+		this.events[event_name].push(cb)
 	}
 	removeEventListener(event_name, cb) {
 		if (this.events[event_name]) {
-			this.events[event_name].remove(cb);
+			removeFromArray(this.events[event_name], cb);
 		}
 	}
 }

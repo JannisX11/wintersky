@@ -60,13 +60,7 @@ class Particle {
 	add() {
 		if (!this.emitter.particles.includes(this)) {
 			this.emitter.particles.push(this);
-			if (this.emitter.config.space_local_position && this.emitter.local_space.parent) {
-				// Add the particle to the local space object if local space is enabled and used
-				this.emitter.local_space.add(this.mesh);
-			} else {
-				// Otherwise add to global space
-				this.emitter.global_space.add(this.mesh);
-			}
+			this.emitter.getActiveSpace().add(this.mesh);
 		}
 
 		this.age = this.loop_time = 0;
@@ -132,23 +126,28 @@ class Particle {
 		//Speed
 		this.speed.set(0, 0, 0);
 		var dir = this.emitter.config.particle_direction_mode;
-		if (dir == 'inwards' || dir == 'outwards') {
+		if (dir == 'outwards' && this.emitter.inherited_particle_speed) {
+			this.speed.copy(this.emitter.inherited_particle_speed);
 
-			if (this.emitter.config.emitter_shape_mode === 'point') {
-				this.speed.set(1, 0, 0).applyEuler(MathUtil.getRandomEuler())
-			} else {
-				this.speed.copy(this.position).normalize()
-				if (dir == 'inwards') {
-					this.speed.negate()
-				}
-			}
 		} else {
-			this.speed = this.emitter.calculate(this.emitter.config.particle_direction_direction, params).normalize()
+			if (dir == 'inwards' || dir == 'outwards') {
+
+				if (this.emitter.config.emitter_shape_mode === 'point') {
+					this.speed.set(1, 0, 0).applyEuler(MathUtil.getRandomEuler())
+				} else {
+					this.speed.copy(this.position).normalize()
+					if (dir == 'inwards') {
+						this.speed.negate()
+					}
+				}
+			} else {
+				this.speed = this.emitter.calculate(this.emitter.config.particle_direction_direction, params).normalize()
+			}
+			let linear_speed = this.emitter.calculate(this.emitter.config.particle_motion_linear_speed, params);
+			this.speed.x *= linear_speed;
+			this.speed.y *= linear_speed;
+			this.speed.z *= linear_speed;
 		}
-		var speed = this.emitter.calculate(this.emitter.config.particle_motion_linear_speed, params);
-		this.speed.x *= speed;
-		this.speed.y *= speed;
-		this.speed.z *= speed;
 
 		this.position.add(this.emitter.calculate(this.emitter.config.emitter_shape_offset, params))
 
@@ -181,7 +180,12 @@ class Particle {
 		}
 
 		//UV
-		this.setFrame(0)
+		this.setFrame(0);
+
+		// Creation event
+		for (let event of this.emitter.config.particle_events_creation) {
+			this.emitter.runEvent(event, this);
+		}
 
 		return this.tick();
 	}
@@ -197,10 +201,10 @@ class Particle {
 		this.age += step;
 		this.loop_time += step;
 		if (this.lifetime && this.age > this.lifetime) {
-			this.remove();
+			this.expire();
 		}
 		if (this.emitter.calculate(this.emitter.config.particle_lifetime_expiration_expression, params)) {
-			this.remove();
+			this.expire();
 		}
 		
 		//Movement
@@ -234,21 +238,18 @@ class Particle {
 				}
 				var line = new THREE.Line3(start_point, end_point);
 				if (plane.intersectsLine(line)) {
-					this.remove();
+					this.expire();
 					return this;
 				}
 			}
 			if (
-				this.emitter.ground_collision &&
-				(
-					(!this.emitter.config.particle_collision_enabled && this.emitter.config.particle_collision_collision_radius)
-					|| this.emitter.calculate(this.emitter.config.particle_collision_enabled, params)
-				)
+				this.emitter.ground_collision && this.emitter.config.particle_collision_toggle &&
+				(!this.emitter.config.particle_collision_enabled || this.emitter.calculate(this.emitter.config.particle_collision_enabled, params))
 			) {
 				// Collision
 				let drag = this.emitter.config.particle_collision_collision_drag;
 				let bounce = this.emitter.config.particle_collision_coefficient_of_restitution;
-				let radius = this.emitter.config.particle_collision_collision_radius;
+				let radius = Math.max(this.emitter.config.particle_collision_collision_radius, 0.0001);
 
 				let plane = collisionPlane;
 				let sphere = new THREE.Sphere(this.position, radius);
@@ -262,8 +263,16 @@ class Particle {
 
 				if (intersects_line || plane.intersectsSphere(sphere)) {
 					// Collide
+					if (this.emitter.config.particle_collision_events.length) {
+						let speed = this.speed.length();
+						for (let event of this.emitter.config.particle_collision_events) {
+							if (typeof event != 'object' || !event.event) continue;
+							if (event.min_speed && event.min_speed > speed) continue;
+							this.emitter.runEvent(event.event, this);
+						}
+					}
 					if (this.emitter.config.particle_collision_expire_on_contact) {
-						this.remove();
+						this.expire();
 						return this;
 					}
 					this.position.y = radius * Math.sign(previous_pos.y)
@@ -361,7 +370,21 @@ class Particle {
 			}
 		}
 
+		// Event timeline
+		for (let key in this.emitter.config.particle_events_timeline) {
+			let time = parseFloat(key);
+			if (time > this.age - step && time <= this.age) {
+				this.emitter.runEvent(this.emitter.config.particle_events_timeline[key], this);
+			}
+		}
+
 		return this;
+	}
+	expire() {
+		for (let event_id of this.emitter.config.particle_events_expiration) {
+			this.emitter.runEvent(event_id, this);
+		}
+		this.remove();
 	}
 	remove() {
 		removeFromArray(this.emitter.particles, this);

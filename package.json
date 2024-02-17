@@ -32,8 +32,8 @@
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
-    "molangjs": "^1.6.1",
-    "three": "^0.147.0",
+    "molangjs": "^1.6.2",
+    "three": "^0.150.1",
     "tinycolor2": "^1.4.2"
   }
 }

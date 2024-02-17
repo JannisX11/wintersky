@@ -8,8 +8,10 @@ class Scene {
 	 */
 	constructor(options={}) {
 		this.emitters = []
+		this.child_configs = {}
 		this.space = new THREE.Object3D()
 		this._fetchTexture = options.fetchTexture
+		this._fetchParticleFile = options.fetchParticleFile
 
 		this.global_options = {
 			max_emitter_particles: options.max_emitter_particles || 30000,
@@ -36,6 +38,9 @@ class Scene {
 
 	fetchTexture(config) {
 		if(typeof this._fetchTexture === "function") return this._fetchTexture(config)
+	}
+	fetchParticleFile(identifier) {
+		if(typeof this._fetchParticleFile === "function") return this._fetchParticleFile(identifier)
 	}
 	
 	updateFacingRotation(camera) {
