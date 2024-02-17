@@ -31,6 +31,8 @@ emitter.playLoop();
 wintersky_scene.updateFacingRotation(camera);
 ```
 
+Three.js up to version r134 is currently supported. Newer versions of three.js have an issue with updating textures on the fly if their size has changed. A workaround would be required to solve this.
+
 # Development
 
 * `npm i`: Install dependencies
