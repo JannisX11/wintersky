@@ -403,6 +403,10 @@ class Particle {
 		attribute.needsUpdate = true;
 	}
 	setFrame(n) {
+		if (this.emitter.config.particle_texture_mode === 'full') {
+			this.setUV(0, 0, this.emitter.config.particle_texture_size[0], this.emitter.config.particle_texture_size[1])
+			return;
+		}
 		var params = this.params()
 		var uv = this.emitter.calculate(this.emitter.config.particle_texture_uv, params)
 		var size = this.emitter.calculate(this.emitter.config.particle_texture_uv_size, params)

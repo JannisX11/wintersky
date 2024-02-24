@@ -37,6 +37,7 @@ class Config {
 				this.onTextureUpdate();
 			}
 		}
+		this.texture_source_category = 'placeholder';
 		this.reset()
 		this.onTextureUpdate = null;
 
@@ -102,6 +103,8 @@ class Config {
 		this.particle_appearance_size = ['0.2', '0.2'];
 		this.particle_lifetime_max_lifetime = '1';
 		this.particle_texture_size = [16, 16];
+
+		this.texture_source_category = 'placeholder';
 
 		return this;
 	}
@@ -402,6 +405,10 @@ class Config {
 						this.set('particle_texture_max_frame', uv.flipbook.max_frame);
 						this.set('particle_texture_stretch_to_lifetime', uv.flipbook.stretch_to_lifetime);
 						this.set('particle_texture_loop', uv.flipbook.loop);
+					} else if (uv.texture_width == 1 && uv.texture_height == 1 && uv.uv && !uv.uv[0] && !uv.uv[1] && uv.uv_size && uv.uv_size[0] == 1 && uv.uv_size[1] == 1) {
+						this.set('particle_texture_mode', 'full');
+						this.set('particle_texture_uv', uv.uv);
+						this.set('particle_texture_uv_size', uv.uv_size);
 					} else {
 						this.set('particle_texture_mode', 'static');
 						this.set('particle_texture_uv', uv.uv);
@@ -479,20 +486,27 @@ class Config {
 				switch (this.particle_texture_path) {
 					case 'textures/particle/particles':
 						url = ParticlesTex;
+						this.texture_source_category = 'built_in';
 						break;
 					case 'textures/flame_atlas': case 'textures/particle/flame_atlas':
 						url = FlameAtlasTex;
+						this.texture_source_category = 'built_in';
 						break;
 					case 'textures/particle/soul':
 						url = SoulTex;
+						this.texture_source_category = 'built_in';
 						break;
 					case 'textures/particle/campfire_smoke':
 						url = CampfireSmokeTex;
+						this.texture_source_category = 'built_in';
 						break;
 					default:
 						url = MissingTex;
+						this.texture_source_category = 'placeholder';
 						break;
 				}
+			} else {
+				this.texture_source_category = 'loaded';
 			}
 			this.texture.image.src = url;
 		}

@@ -217,9 +217,6 @@ class Emitter extends EventClass {
 	updateConfig() {
 		this.updateMaterial();
 	}
-	updateMaterial() {
-		this.config.updateTexture();
-	}
 	updateFacingRotation(camera) {
 		if (this.particles.length == 0) return;
 
@@ -414,7 +411,7 @@ class Emitter extends EventClass {
 			if (!this.enabled && this.calculate(this.config.emitter_lifetime_activation, params)) {
 				this.start()
 			}
-		} else if (this.loop_mode == 'looping' || (this.loop_mode == 'auto' && this.config.emitter_lifetime_mode == 'looping')) {
+		} else if (!this.parent_emitter && (this.loop_mode == 'looping' || (this.loop_mode == 'auto' && this.config.emitter_lifetime_mode == 'looping'))) {
 			//Looping
 			if (this.enabled && MathUtil.roundTo(this.age, 5) >= this.active_time) {
 				this.stop()
@@ -440,7 +437,7 @@ class Emitter extends EventClass {
 		}
 		this.child_emitters.forEach(e => e.delete());
 		this.child_emitters.splice(0);
-		this.dispatchEvent('stop', {})
+		this.dispatchEvent('stop', {});
 		for (let event_id of this.config.emitter_events_expiration) {
 			this.runEvent(event_id);
 		}
@@ -491,7 +488,6 @@ class Emitter extends EventClass {
 		this.tick_interval = setInterval(() => {
 			this.tick()
 		}, 1000 / this.scene.global_options.tick_rate)
-		//this.child_emitters.forEach(e => e.playLoop());
 		return this;
 	}
 	toggleLoop() {
@@ -499,18 +495,12 @@ class Emitter extends EventClass {
 		if (this.paused) {
 			clearInterval(this.tick_interval);
 			delete this.tick_interval;
-			/*this.child_emitters.forEach(e => {
-				clearInterval(e.tick_interval);
-				delete e.tick_interval;
-			});*/
 		} else {
 			this.playLoop();
-			//this.child_emitters.forEach(e => e.playLoop());
 		}
 		return this;
 	}
 	stopLoop() {
-		//this.child_emitters.forEach(e => e.stopLoop());
 		clearInterval(this.tick_interval);
 		delete this.tick_interval;
 		this.stop(true);
@@ -599,11 +589,13 @@ class Emitter extends EventClass {
 					} else if (subpart.particle_effect.type == 'particle_with_velocity' && particle) {
 						emitter.inherited_particle_speed = new THREE.Vector3().copy(particle.speed);
 					}
-					let position = particle ? particle.position : this.getActiveSpace().position;
-					emitter.getActiveSpace().position.copy(position);
+					let position = new THREE.Vector3();
 					if (particle) {
-						//emitter.getActiveSpace().rotation.copy(particle.mesh.rotation);
+						particle.mesh.getWorldPosition(position);
+					} else {
+						this.getActiveSpace().getWorldPosition(position);
 					}
+					emitter.getActiveSpace().position.copy(position);
 
 					emitter.start();
 				}
