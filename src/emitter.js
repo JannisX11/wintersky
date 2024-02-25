@@ -143,6 +143,7 @@ class Emitter extends EventClass {
 		this.parent_mode = options.parent_mode || scene.global_options.parent_mode;
 		this.ground_collision = typeof options.ground_collision == 'boolean' ? options.ground_collision : scene.global_options.ground_collision;
 		this.inherited_particle_speed = null;
+		this.pre_effect_expression = null;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
 		this.tick_values = {};
 		this.creation_values = {};
@@ -318,7 +319,7 @@ class Emitter extends EventClass {
 		this.enabled = true;
 		this.initialized = true;
 		this.scene.space.add(this.global_space);
-		var params = this.params();
+		let params = this.params();
 		this.Molang.resetVariables();
 		this.active_time = this.calculate(this.config.emitter_lifetime_active_time, params)
 		this.sleep_time = this.calculate(this.config.emitter_lifetime_sleep_time, params)
@@ -326,7 +327,10 @@ class Emitter extends EventClass {
 		this.creation_values = {};
 
 		for (var line of this.config.variables_creation_vars) {
-			this.Molang.parse(line);
+			this.Molang.parse(line, params);
+		}
+		if (typeof this.pre_effect_expression == 'string') {
+			this.Molang.parse(this.pre_effect_expression, params);
 		}
 
 		this.dispatchEvent('start', {params})
@@ -352,7 +356,7 @@ class Emitter extends EventClass {
 
 		// Calculate tick values
 		for (var line of this.config.variables_tick_vars) {
-			this.Molang.parse(line);
+			this.Molang.parse(line, params);
 		}
 		if (this.config.particle_update_expression.length) {
 			this.particles.forEach(p => {
@@ -425,6 +429,10 @@ class Emitter extends EventClass {
 				this.stop()
 			}
 		}
+		if (this.parent_emitter && this.particles.length == 0 && this.age > this.active_time) {
+			removeFromArray(this.parent_emitter.child_emitters, this);
+			this.delete();
+		}
 		return this;
 	}
 	stop(clear_particles = false) {
@@ -474,7 +482,7 @@ class Emitter extends EventClass {
 	updateMaterial() {
 		let material = this.config.particle_appearance_material;
 		this.material.uniforms.materialType.value = materialTypes.indexOf(material);
-		this.material.side = (material === 'particles_blend' || material === 'particles_add') ? THREE.DoubleSide : THREE.FrontSide;
+		this.material.side = (material === 'particles_alpha' || material === 'particles_opaque') ? THREE.FrontSide : THREE.DoubleSide;
 		this.material.blending = material === 'particles_add' ? THREE.AdditiveBlending : THREE.NormalBlending;
 	}
 
@@ -531,14 +539,17 @@ class Emitter extends EventClass {
 	delete() {
 		this.child_emitters.forEach(e => e.delete());
 		this.child_emitters.splice(0);
-		[...this.particles, ...this.dead_particles].forEach(particle => {
-			if (particle.mesh.parent) particle.mesh.parent.remove(particle.mesh);
+		this.particles.concat(this.dead_particles).forEach(particle => {
+			particle.delete();
 		})
 		this.particles.splice(0, Infinity);
 		this.dead_particles.splice(0, Infinity);
 		if (this.local_space.parent) this.local_space.parent.remove(this.local_space);
 		if (this.global_space.parent) this.global_space.parent.remove(this.global_space);
 		removeFromArray(this.scene.emitters, this);
+		this.material.dispose();
+		delete this.material;
+		delete this.parent_emitter;
 	}
 
 	// Events
@@ -582,6 +593,7 @@ class Emitter extends EventClass {
 					emitter = new Emitter(this.scene, config, {});
 					emitter.creation_time = this.age;
 					emitter.parent_emitter = this;
+					emitter.pre_effect_expression = subpart.particle_effect.pre_effect_expression;
 					this.child_emitters.push(emitter);
 
 					if (subpart.particle_effect.type == 'emitter_bound') {

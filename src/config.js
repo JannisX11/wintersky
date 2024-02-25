@@ -414,6 +414,8 @@ class Config {
 						this.set('particle_texture_uv', uv.uv);
 						this.set('particle_texture_uv_size', uv.uv_size);
 					}
+				} else {
+					this.set('particle_texture_mode', 'full');
 				}
 			}
 			if (comp('particle_appearance_lighting')) {

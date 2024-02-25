@@ -392,6 +392,10 @@ class Particle {
 		this.emitter.dead_particles.push(this);
 		return this;
 	}
+	delete() {
+		if (this.mesh.parent) this.mesh.parent.remove(this.mesh);
+		this.geometry.dispose();
+	}
 	setColor(r, g, b, a = 1) {
 		let attribute = this.geometry.getAttribute('clr');
 		attribute.array.set([
