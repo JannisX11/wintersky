@@ -219,7 +219,7 @@ export interface WinterskyOptions {
 	 * Method to fetch particle effects that are played by events. Null by default. Should return the content of a particle file as parsed JSON
 	 * @param config Particle config that is requesting the effect
 	 */
-	fetchParticleFile?: null | ((config: Config) => Promise<string | undefined> | string | undefined)
+	fetchParticleFile?: null | ((identifier: string, config: Config) => Promise<string | undefined> | string | undefined)
 }
 
 export class Scene {

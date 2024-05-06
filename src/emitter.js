@@ -403,7 +403,7 @@ class Emitter extends EventClass {
 		}
 
 		// Child emitters
-		this.child_emitters.forEach(e => {
+		this.child_emitters.slice().forEach(e => {
 			e.tick(jump);
 		});
 
@@ -435,17 +435,17 @@ class Emitter extends EventClass {
 		}
 		return this;
 	}
-	stop(clear_particles = false) {
+	stop(clear_scene = false) {
 		this.enabled = false;
 		this.age = 0;
-		if (clear_particles) {
+		if (clear_scene) {
 			this.particles.slice().forEach(particle => {
 				particle.remove();
 			});
+			this.child_emitters.slice().forEach(e => e.delete());
+			this.child_emitters.splice(0);
 		}
-		this.child_emitters.forEach(e => e.delete());
-		this.child_emitters.splice(0);
-		this.dispatchEvent('stop', {});
+		this.dispatchEvent('stop', {clear_scene});
 		for (let event_id of this.config.emitter_events_expiration) {
 			this.runEvent(event_id);
 		}
@@ -469,10 +469,12 @@ class Emitter extends EventClass {
 			this.tick(true);
 			if (this.view_age <= last_view_age) break;
 			last_view_age = this.view_age;
+			if (!this.material) return;
 		}
 		this.tick(false);
+		if (!this.material) return;
 		this.child_emitters.slice().forEach(e => {
-			if (e.creation_time < new_time) {
+			if (e.creation_time > second) {
 				e.delete();
 				removeFromArray(this.child_emitters, e);
 			}
@@ -537,7 +539,7 @@ class Emitter extends EventClass {
 		return count;
 	}
 	delete() {
-		this.child_emitters.forEach(e => e.delete());
+		this.child_emitters.slice().forEach(e => e.delete());
 		this.child_emitters.splice(0);
 		this.particles.concat(this.dead_particles).forEach(particle => {
 			particle.delete();
@@ -557,7 +559,7 @@ class Emitter extends EventClass {
 		this.dispatchEvent('event', {event_id, particle});
 
 		let event = this.config.events[event_id];
-		let runEventSubpart = (subpart) => {
+		let runEventSubpart = async (subpart) => {
 			if (subpart.sequence instanceof Array) {
 				for (let part2 of subpart.sequence) {
 					runEventSubpart(part2);
@@ -572,20 +574,29 @@ class Emitter extends EventClass {
 			if (subpart.expression) {
 				this.Molang.parse(subpart.expression, this.params());
 			}
+			if (subpart.sound_effect) {
+				this.dispatchEvent('play_sound', {sound_effect: subpart.sound_effect, particle, event_id});
+			}
 			if (subpart.particle_effect) {
 				let identifier = subpart.particle_effect.effect;
 				let config = this.scene.child_configs[identifier];
 				if (!this.scene.child_configs[identifier] && this.scene._fetchParticleFile) {
 					config = this.scene.child_configs[identifier] = new Config(this.scene);
-					let result = this.scene.fetchParticleFile(identifier);
+					let result = this.scene.fetchParticleFile(identifier, this.config, config);
+					let loadResult = result => {
+						if (!result) return;
+						if (result.json) {
+							config.file_path = result.file_path;
+							config.setFromJSON(result.json || result);
+						} else {
+							// Backwards compatibility for API change
+							config.setFromJSON(result);
+						}
+					}
 					if (result instanceof Promise) {
-						result.then(result2 => {
-							if (result2) {
-								config.setFromJSON(result2);
-							}
-						});
+						loadResult(await result);
 					} else if (result) {
-						config.setFromJSON(result);
+						loadResult(result);
 					}
 				}
 				let emitter;
@@ -607,14 +618,17 @@ class Emitter extends EventClass {
 					} else {
 						this.getActiveSpace().getWorldPosition(position);
 					}
+					if (this.local_space.parent) {
+						if (!this.config.space_local_position) {
+							let offset = this.local_space.getWorldPosition(new THREE.Vector3());
+							position.add(offset);
+						}
+					}
 					emitter.getActiveSpace().position.copy(position);
 
 					emitter.start();
 				}
 				this.dispatchEvent('play_child_particle', {particle_effect: subpart.particle_effect, config, child_emitter: emitter, event_id});
-			}
-			if (subpart.sound_effect) {
-				this.dispatchEvent('play_sound', {sound_effect: subpart.sound_effect, particle, event_id});
 			}
 		}
 		if (event) runEventSubpart(event);

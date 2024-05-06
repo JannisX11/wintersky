@@ -39,8 +39,8 @@ class Scene {
 	fetchTexture(config) {
 		if(typeof this._fetchTexture === "function") return this._fetchTexture(config)
 	}
-	fetchParticleFile(identifier) {
-		if(typeof this._fetchParticleFile === "function") return this._fetchParticleFile(identifier)
+	fetchParticleFile(identifier, config) {
+		if(typeof this._fetchParticleFile === "function") return this._fetchParticleFile(identifier, config)
 	}
 	
 	updateFacingRotation(camera) {
