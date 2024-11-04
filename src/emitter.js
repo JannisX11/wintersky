@@ -556,6 +556,12 @@ class Emitter extends EventClass {
 
 	// Events
 	runEvent(event_id, particle) {
+		if (event_id instanceof Array) {
+			for (let new_id of event_id) {
+				this.runEvent(new_id, particle);
+			}
+			return;
+		}
 		this.dispatchEvent('event', {event_id, particle});
 
 		let event = this.config.events[event_id];

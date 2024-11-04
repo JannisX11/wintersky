@@ -456,7 +456,7 @@ class Config {
 							gradient_points.push({percent, color})
 						})
 					} else if (typeof c.gradient == 'object') {
-						let max_time = 0;
+						let max_time = 1;
 						for (var time in c.gradient) {
 							max_time = Math.max(parseFloat(time), max_time)
 						}
