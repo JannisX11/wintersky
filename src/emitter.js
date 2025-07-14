@@ -377,6 +377,7 @@ class Emitter extends EventClass {
 			p.tick(jump)
 		})
 
+		let last_age = this.age;
 		this.age += step;
 		this.view_age += step;
 
@@ -397,7 +398,7 @@ class Emitter extends EventClass {
 		// Event timeline
 		for (let key in this.config.emitter_events_timeline) {
 			let time = parseFloat(key);
-			if (time > this.age - step && time <= this.age) {
+			if (time >= last_age && time < this.age) {
 				this.runEvent(this.config.emitter_events_timeline[key]);
 			}
 		}
@@ -410,7 +411,7 @@ class Emitter extends EventClass {
 		if (this.config.emitter_lifetime_mode === 'expression') {
 			//Expressions
 			if (this.enabled && this.calculate(this.config.emitter_lifetime_expiration, params)) {
-				this.stop();
+				this.expire();
 			}
 			if (!this.enabled && this.calculate(this.config.emitter_lifetime_activation, params)) {
 				this.start()
@@ -418,7 +419,7 @@ class Emitter extends EventClass {
 		} else if (!this.parent_emitter && (this.loop_mode == 'looping' || (this.loop_mode == 'auto' && this.config.emitter_lifetime_mode == 'looping'))) {
 			//Looping
 			if (this.enabled && MathUtil.roundTo(this.age, 5) >= this.active_time) {
-				this.stop()
+				this.expire()
 			}
 			if (!this.enabled && MathUtil.roundTo(this.age, 5) >= this.sleep_time) {
 				this.start()
@@ -426,7 +427,7 @@ class Emitter extends EventClass {
 		} else {
 			//Once
 			if (this.enabled && MathUtil.roundTo(this.age, 5) >= this.active_time) {
-				this.stop()
+				this.expire()
 			}
 		}
 		if (this.parent_emitter && this.particles.length == 0 && this.age > this.active_time) {
@@ -446,6 +447,11 @@ class Emitter extends EventClass {
 			this.child_emitters.splice(0);
 		}
 		this.dispatchEvent('stop', {clear_scene});
+		return this;
+	}
+	expire() {
+		this.stop();
+		this.dispatchEvent('expire');
 		for (let event_id of this.config.emitter_events_expiration) {
 			this.runEvent(event_id);
 		}

@@ -198,6 +198,7 @@ class Particle {
 		}
 
 		//Lifetime
+		let last_age = this.age;
 		this.age += step;
 		this.loop_time += step;
 		if (this.lifetime && this.age > this.lifetime) {
@@ -373,7 +374,7 @@ class Particle {
 		// Event timeline
 		for (let key in this.emitter.config.particle_events_timeline) {
 			let time = parseFloat(key);
-			if (time > this.age - step && time <= this.age) {
+			if (time >= last_age && time < this.age) {
 				this.emitter.runEvent(this.emitter.config.particle_events_timeline[key], this);
 			}
 		}
