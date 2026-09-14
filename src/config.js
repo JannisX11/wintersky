@@ -398,8 +398,8 @@ class Config {
 					}
 					if (uv.flipbook) {
 						this.set('particle_texture_mode', 'animated');
-						this.set('particle_texture_uv', uv.flipbook.base_UV);
-						this.set('particle_texture_uv_size', uv.flipbook.size_UV);
+						this.set('particle_texture_uv', uv.flipbook.base_UV == undefined ? uv.uv : uv.flipbook.base_UV);
+						this.set('particle_texture_uv_size', uv.flipbook.size_UV == undefined ? uv.uv_size : uv.flipbook.size_UV);
 						this.set('particle_texture_uv_step', uv.flipbook.step_UV);
 						this.set('particle_texture_frames_per_second', uv.flipbook.frames_per_second);
 						this.set('particle_texture_max_frame', uv.flipbook.max_frame);
