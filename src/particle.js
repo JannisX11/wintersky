@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import tinycolor from 'tinycolor2';
 
-import {MathUtil, Normals, removeFromArray} from './util';
+import {MathUtil, Normals, removeFromArray, ParticleScope} from './util';
 import Wintersky from './wintersky';
 
 const defaultColor = {r: 255, r: 255, b: 255, a: 1};
@@ -49,6 +49,7 @@ class Particle {
 	}
 	params() {
 		var obj = this.emitter.params();
+		obj[ParticleScope] = this.variables;
 		obj["variable.particle_lifetime"] = this.lifetime;
 		obj["variable.particle_age"] = this.age;
 		obj["variable.particle_random_1"] = this.random_vars[0];
@@ -66,6 +67,7 @@ class Particle {
 		this.age = this.loop_time = 0;
 		this.current_frame = 0;
 		this.random_vars = [Math.random(), Math.random(), Math.random(), Math.random()]
+		this.variables = Object.create(this.emitter.Molang.variables);
 		var params = this.params()
 
 		this.position.set(0, 0, 0)
@@ -123,6 +125,8 @@ class Particle {
 				this.position.applyQuaternion(q)
 			}
 		}
+		let shape_offset = this.emitter.calculate(this.emitter.config.emitter_shape_offset, params);
+
 		//Speed
 		this.speed.set(0, 0, 0);
 		var dir = this.emitter.config.particle_direction_mode;
@@ -149,7 +153,7 @@ class Particle {
 			this.speed.z *= linear_speed;
 		}
 
-		this.position.add(this.emitter.calculate(this.emitter.config.emitter_shape_offset, params))
+		this.position.add(shape_offset)
 
 		if (this.emitter.parent_mode == 'locator') {
 			this.position.x *= -1;
@@ -194,7 +198,7 @@ class Particle {
 		let step = 1 / this.emitter.scene.global_options.tick_rate;
 
 		for (var entry of this.emitter.config.particle_render_expression) {
-			this.emitter.Molang.parse(entry, params);
+			this.emitter.parse(entry, params);
 		}
 
 		//Lifetime
