@@ -27,6 +27,17 @@ function parseColor(input) {
 	return '#' + input.substr(3, 6) + input.substr(1, 2);
 }
 
+function unwrapExpression(value) {
+	if (value instanceof Array) return value.map(unwrapExpression);
+	if (!value || typeof value != 'object') return value;
+	if (typeof value.expression == 'string' && Object.keys(value).every(key => key == 'expression' || key == 'version')) {
+		return value.expression;
+	}
+	const out = {};
+	for (const key in value) out[key] = unwrapExpression(value[key]);
+	return out;
+}
+
 class Config {
 	constructor(scene, config, options = 0) {
 		this.scene = scene
@@ -132,6 +143,7 @@ class Config {
 		return this;
 	}
 	setFromJSON(data) {
+		data = unwrapExpression(data);
 
 		var comps = data.particle_effect.components;
 		var curves = data.particle_effect.curves;
