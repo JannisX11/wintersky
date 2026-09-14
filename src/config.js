@@ -225,8 +225,9 @@ class Config {
 				this.set('emitter_lifetime_sleep_time',  comp('emitter_lifetime_looping').sleep_time);
 			}
 			if (comp('emitter_lifetime_expression')) {
+				let activation = comp('emitter_lifetime_expression').activation_expression;
 				this.set('emitter_lifetime_mode',  'expression');
-				this.set('emitter_lifetime_activation',  comp('emitter_lifetime_expression').activation_expression);
+				this.set('emitter_lifetime_activation',  activation == undefined ? 1 : activation);
 				this.set('emitter_lifetime_expiration',  comp('emitter_lifetime_expression').expiration_expression);
 			}
 			if (comp('emitter_lifetime_events')) {
