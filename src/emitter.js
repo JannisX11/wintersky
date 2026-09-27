@@ -373,9 +373,9 @@ class Emitter extends EventClass {
 			this.updateMaterial();
 		}
 		// Tick particles
-		this.particles.forEach(p => {
-			p.tick(jump)
-		})
+		for (const particle of this.particles.slice()) {
+			particle.tick(jump)
+		}
 
 		let last_age = this.age;
 		this.age += step;
