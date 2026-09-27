@@ -362,7 +362,15 @@ class Particle {
 			} else if (this.emitter.config.particle_color_mode === 'gradient') {
 				var i = this.emitter.calculate(this.emitter.config.particle_color_interpolant, params)
 				var r = this.emitter.calculate(this.emitter.config.particle_color_range, params)
-				var c = calculateGradient(this.emitter.config.particle_color_gradient, (i/r) * 100)
+				let gradient = this.emitter.config.particle_color_gradient;
+				if (gradient.some(point => point.color instanceof Array)) {
+					gradient = gradient.map(point => {
+						if (!(point.color instanceof Array)) return point;
+						let rgba = this.emitter.calculate(point.color, params, 'array');
+						return {percent: point.percent, color: {r: rgba[0] * 255, g: rgba[1] * 255, b: rgba[2] * 255, a: rgba.length > 3 ? rgba[3] : 1}};
+					});
+				}
+				var c = calculateGradient(gradient, (i/r) * 100)
 				this.setColor(c.r/255, c.g/255, c.b/255, c.a);
 
 			} else {
