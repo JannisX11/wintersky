@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import Wintersky from './wintersky';
 import Config from './config';
 import Particle from './particle';
-import { MathUtil, removeFromArray, Normals, getRandomFromWeightedList } from './util';
+import { MathUtil, removeFromArray, Normals, getRandomFromWeightedList, ParticleScope } from './util';
 
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
@@ -33,8 +33,8 @@ function createCurveSpline(curve) {
 }
 function calculateCurve(emitter, curve, curve_key, params) {
 
-	var position = emitter.Molang.parse(curve.input, params);
-	var range = emitter.Molang.parse(curve.range, params);
+	var position = emitter.parse(curve.input, params);
+	var range = emitter.parse(curve.range, params);
 	if (curve.mode == 'bezier_chain') range = 1;
 
 	position = (position/range) || 0;
@@ -177,9 +177,19 @@ class Emitter extends EventClass {
 		obj["variable.emitter_random_4"] = this.random_vars[3];
 		return obj;
 	}
+	parse(expression, variables) {
+		let scope = variables && variables[ParticleScope];
+		if (!scope) return this.Molang.parse(expression, variables);
+
+		let emitter_scope = this.Molang.variables;
+		this.Molang.variables = scope;
+		let value = this.Molang.parse(expression, variables);
+		this.Molang.variables = emitter_scope;
+		return value;
+	}
 	calculate(input, variables, datatype) {
 
-		let getV = v => this.Molang.parse(v, variables)
+		let getV = v => this.parse(v, variables)
 		var data;
 	
 		if (input instanceof Array) {
@@ -327,10 +337,10 @@ class Emitter extends EventClass {
 		this.creation_values = {};
 
 		for (var line of this.config.variables_creation_vars) {
-			this.Molang.parse(line, params);
+			this.parse(line, params);
 		}
 		if (typeof this.pre_effect_expression == 'string') {
-			this.Molang.parse(this.pre_effect_expression, params);
+			this.parse(this.pre_effect_expression, params);
 		}
 
 		this.dispatchEvent('start', {params})
@@ -356,13 +366,13 @@ class Emitter extends EventClass {
 
 		// Calculate tick values
 		for (var line of this.config.variables_tick_vars) {
-			this.Molang.parse(line, params);
+			this.parse(line, params);
 		}
 		if (this.config.particle_update_expression.length) {
 			this.particles.forEach(p => {
 				let particle_params = p.params();
 				for (var entry of this.config.particle_update_expression) {
-					this.Molang.parse(entry, particle_params);
+					this.parse(entry, particle_params);
 				}
 			})
 		}
@@ -584,7 +594,7 @@ class Emitter extends EventClass {
 
 			// Run event
 			if (subpart.expression) {
-				this.Molang.parse(subpart.expression, this.params());
+				this.parse(subpart.expression, this.params());
 			}
 			if (subpart.sound_effect) {
 				this.dispatchEvent('play_sound', {sound_effect: subpart.sound_effect, particle, event_id});
