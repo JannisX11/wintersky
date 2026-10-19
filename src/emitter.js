@@ -129,6 +129,7 @@ class Emitter extends EventClass {
 			fragmentShader,
 			vertexColors: true,
 			transparent: true,
+			depthWrite: false,
 			alphaTest: 0.2
 		});
 
