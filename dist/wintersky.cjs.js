@@ -94,6 +94,17 @@ function parseColor(input) {
 	return '#' + input.substr(3, 6) + input.substr(1, 2);
 }
 
+function unwrapExpression(value) {
+	if (value instanceof Array) return value.map(unwrapExpression);
+	if (!value || typeof value != 'object') return value;
+	if (typeof value.expression == 'string' && Object.keys(value).every(key => key == 'expression' || key == 'version')) {
+		return value.expression;
+	}
+	const out = {};
+	for (const key in value) out[key] = unwrapExpression(value[key]);
+	return out;
+}
+
 class Config {
 	constructor(scene, config, options = 0) {
 		this.scene = scene;
@@ -170,6 +181,8 @@ class Config {
 		this.particle_appearance_size = ['0.2', '0.2'];
 		this.particle_lifetime_max_lifetime = '1';
 		this.particle_texture_size = [16, 16];
+		this.particle_texture_uv = [0, 0];
+		this.particle_texture_uv_size = [16, 16];
 
 		this.texture_source_category = 'placeholder';
 
@@ -199,6 +212,7 @@ class Config {
 		return this;
 	}
 	setFromJSON(data) {
+		data = unwrapExpression(data);
 
 		var comps = data.particle_effect.components;
 		var curves = data.particle_effect.curves;
@@ -1064,9 +1078,7 @@ class Particle {
 		if (!jump) {
 			//Size
 			var size = this.emitter.calculate(this.emitter.config.particle_appearance_size, params);
-			this.mesh.scale.x = size.x || 0.0001;
-			this.mesh.scale.y = size.y || 0.0001;
-
+			this.mesh.scale.x = Math.max(size.x, 0.00001);			this.mesh.scale.y = Math.max(size.y, 0.00001);
 
 			//UV
 			if (this.emitter.config.particle_texture_mode === 'animated') {
@@ -1157,7 +1169,7 @@ class Particle {
 			var offset = this.emitter.calculate(this.emitter.config.particle_texture_uv_step, params);
 			uv.addScaledVector(offset, n);
 		}
-		this.setUV(uv.x, uv.y, size.x||this.emitter.config.particle_texture_size[0], size.y||this.emitter.config.particle_texture_size[1]);
+		this.setUV(uv.x, uv.y, size.x||0e-5, size.y||0e-5);
 	}
 	setUV(x, y, w, h) {
 		var epsilon = 0.0;
@@ -1567,15 +1579,15 @@ class Emitter extends EventClass {
 			this.updateMaterial();
 		}
 		// Tick particles
-		this.particles.forEach(p => {
+		for (const particle of this.particles.slice()) {
 			if (this.config.particle_update_expression.length) {
-				let particle_params = p.params();
+				let particle_params = particle.params();
 				for (let entry of this.config.particle_update_expression) {
 					this.Molang.parse(entry, particle_params);
 				}
 			}
-			p.tick(jump);
-		});
+			particle.tick(jump);
+		}
 
 		let last_age = this.age;
 		this.age += step;
@@ -1692,6 +1704,7 @@ class Emitter extends EventClass {
 		this.material.uniforms.materialType.value = materialTypes.indexOf(material);
 		this.material.side = (material === 'particles_alpha' || material === 'particles_opaque') ? THREE.FrontSide : THREE.DoubleSide;
 		this.material.blending = material === 'particles_add' ? THREE.AdditiveBlending : THREE.NormalBlending;
+		this.material.depthWrite = (material === 'particles_add' || material === 'particles_blend') ? false : true;
 	}
 
 	// Playback Loop

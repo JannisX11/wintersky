@@ -372,12 +372,12 @@ class Emitter extends EventClass {
 		// Tick particles
 		for (const particle of this.particles.slice()) {
 			if (this.config.particle_update_expression.length) {
-				let particle_params = p.params();
+				let particle_params = particle.params();
 				for (let entry of this.config.particle_update_expression) {
 					this.Molang.parse(entry, particle_params);
 				}
 			}
-			p.tick(jump)
+			particle.tick(jump)
 		}
 
 		let last_age = this.age;
@@ -495,6 +495,7 @@ class Emitter extends EventClass {
 		this.material.uniforms.materialType.value = materialTypes.indexOf(material);
 		this.material.side = (material === 'particles_alpha' || material === 'particles_opaque') ? THREE.FrontSide : THREE.DoubleSide;
 		this.material.blending = material === 'particles_add' ? THREE.AdditiveBlending : THREE.NormalBlending;
+		this.material.depthWrite = (material === 'particles_add' || material === 'particles_blend') ? false : true;
 	}
 
 	// Playback Loop

@@ -114,6 +114,8 @@ class Config {
 		this.particle_appearance_size = ['0.2', '0.2'];
 		this.particle_lifetime_max_lifetime = '1';
 		this.particle_texture_size = [16, 16];
+		this.particle_texture_uv = [0, 0];
+		this.particle_texture_uv_size = [16, 16];
 
 		this.texture_source_category = 'placeholder';
 
