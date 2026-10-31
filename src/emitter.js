@@ -361,10 +361,6 @@ class Emitter extends EventClass {
 		}
 		if (this.config.particle_update_expression.length) {
 			this.particles.forEach(p => {
-				let particle_params = p.params();
-				for (var entry of this.config.particle_update_expression) {
-					this.Molang.parse(entry, particle_params);
-				}
 			})
 		}
 		this.dispatchEvent('tick', {params})
@@ -375,6 +371,12 @@ class Emitter extends EventClass {
 		}
 		// Tick particles
 		this.particles.forEach(p => {
+			if (this.config.particle_update_expression.length) {
+				let particle_params = p.params();
+				for (let entry of this.config.particle_update_expression) {
+					this.Molang.parse(entry, particle_params);
+				}
+			}
 			p.tick(jump)
 		})
 
