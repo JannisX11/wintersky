@@ -129,6 +129,7 @@ class Emitter extends EventClass {
 			fragmentShader,
 			vertexColors: true,
 			transparent: true,
+			depthWrite: false,
 			alphaTest: 0.2
 		});
 
@@ -360,10 +361,6 @@ class Emitter extends EventClass {
 		}
 		if (this.config.particle_update_expression.length) {
 			this.particles.forEach(p => {
-				let particle_params = p.params();
-				for (var entry of this.config.particle_update_expression) {
-					this.Molang.parse(entry, particle_params);
-				}
 			})
 		}
 		this.dispatchEvent('tick', {params})
@@ -374,7 +371,13 @@ class Emitter extends EventClass {
 		}
 		// Tick particles
 		for (const particle of this.particles.slice()) {
-			particle.tick(jump)
+			if (this.config.particle_update_expression.length) {
+				let particle_params = p.params();
+				for (let entry of this.config.particle_update_expression) {
+					this.Molang.parse(entry, particle_params);
+				}
+			}
+			p.tick(jump)
 		}
 
 		let last_age = this.age;

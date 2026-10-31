@@ -132,6 +132,10 @@ export interface EmitterOptions {
 	 * Specifies in which space the emitter emits and moves particles
 	 */
 	parent_mode: 'world' | 'entity' | 'locator'
+	/**
+	 * Whether particles collide with the ground plane. Defaults to the scene setting
+	 */
+	ground_collision?: boolean
 }
 
 export class Emitter {
@@ -143,6 +147,7 @@ export class Emitter {
 	config: Config
 	loop_mode: 'auto' | 'once' | 'looping'
 	parent_mode: 'world' | 'entity' | 'locator'
+	ground_collision: boolean
 	local_space: Object3D
 	global_space: Object3D
 	/**
@@ -207,6 +212,10 @@ export interface GlobalOptions {
 	 * Emitter scale. The default is 1 for block space. Set to 16 to run in a pixel space environment like Blockbench.
 	 */
 	scale: number
+	/**
+	 * Whether particles collide with the ground plane. True by default
+	 */
+	ground_collision: boolean
 }
 
 export interface WinterskyOptions {
