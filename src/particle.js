@@ -326,8 +326,8 @@ class Particle {
 		if (!jump) {
 			//Size
 			var size = this.emitter.calculate(this.emitter.config.particle_appearance_size, params);
-			this.mesh.scale.x = size.x || 0.0001;
-			this.mesh.scale.y = size.y || 0.0001;
+			this.mesh.scale.x = Math.max(size.x, 0.00001);;
+			this.mesh.scale.y = Math.max(size.y, 0.00001);;
 
 
 			//UV
