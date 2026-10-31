@@ -419,7 +419,7 @@ class Particle {
 			var offset = this.emitter.calculate(this.emitter.config.particle_texture_uv_step, params)
 			uv.addScaledVector(offset, n)
 		}
-		this.setUV(uv.x, uv.y, size.x||this.emitter.config.particle_texture_size[0], size.y||this.emitter.config.particle_texture_size[1])
+		this.setUV(uv.x, uv.y, size.x||0e-5, size.y||0e-5);
 	}
 	setUV(x, y, w, h) {
 		var epsilon = 0.0;
