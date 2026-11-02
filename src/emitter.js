@@ -129,6 +129,7 @@ class Emitter extends EventClass {
 			fragmentShader,
 			vertexColors: true,
 			transparent: true,
+			depthWrite: false,
 			alphaTest: 0.2
 		});
 
@@ -370,10 +371,6 @@ class Emitter extends EventClass {
 		}
 		if (this.config.particle_update_expression.length) {
 			this.particles.forEach(p => {
-				let particle_params = p.params();
-				for (var entry of this.config.particle_update_expression) {
-					this.parse(entry, particle_params);
-				}
 			})
 		}
 		this.dispatchEvent('tick', {params})
@@ -383,9 +380,15 @@ class Emitter extends EventClass {
 			this.updateMaterial();
 		}
 		// Tick particles
-		this.particles.forEach(p => {
-			p.tick(jump)
-		})
+		for (const particle of this.particles.slice()) {
+			if (this.config.particle_update_expression.length) {
+				let particle_params = particle.params();
+				for (let entry of this.config.particle_update_expression) {
+					this.parse(entry, particle_params);
+				}
+			}
+			particle.tick(jump)
+		}
 
 		let last_age = this.age;
 		this.age += step;
@@ -502,6 +505,7 @@ class Emitter extends EventClass {
 		this.material.uniforms.materialType.value = materialTypes.indexOf(material);
 		this.material.side = (material === 'particles_alpha' || material === 'particles_opaque') ? THREE.FrontSide : THREE.DoubleSide;
 		this.material.blending = material === 'particles_add' ? THREE.AdditiveBlending : THREE.NormalBlending;
+		this.material.depthWrite = (material === 'particles_add' || material === 'particles_blend') ? false : true;
 	}
 
 	// Playback Loop

@@ -26,6 +26,21 @@ function parseColor(input) {
 	}
 	return '#' + input.substr(3, 6) + input.substr(1, 2);
 }
+function parseGradientColor(input) {
+	if (input instanceof Array && input.some(value => typeof value == 'string')) return input;
+	return parseColor(input);
+}
+
+function unwrapExpression(value) {
+	if (value instanceof Array) return value.map(unwrapExpression);
+	if (!value || typeof value != 'object') return value;
+	if (typeof value.expression == 'string' && Object.keys(value).every(key => key == 'expression' || key == 'version')) {
+		return value.expression;
+	}
+	const out = {};
+	for (const key in value) out[key] = unwrapExpression(value[key]);
+	return out;
+}
 
 class Config {
 	constructor(scene, config, options = 0) {
@@ -103,6 +118,8 @@ class Config {
 		this.particle_appearance_size = ['0.2', '0.2'];
 		this.particle_lifetime_max_lifetime = '1';
 		this.particle_texture_size = [16, 16];
+		this.particle_texture_uv = [0, 0];
+		this.particle_texture_uv_size = [16, 16];
 
 		this.texture_source_category = 'placeholder';
 
@@ -132,6 +149,7 @@ class Config {
 		return this;
 	}
 	setFromJSON(data) {
+		data = unwrapExpression(data);
 
 		var comps = data.particle_effect.components;
 		var curves = data.particle_effect.curves;
@@ -398,8 +416,8 @@ class Config {
 					}
 					if (uv.flipbook) {
 						this.set('particle_texture_mode', 'animated');
-						this.set('particle_texture_uv', uv.flipbook.base_UV);
-						this.set('particle_texture_uv_size', uv.flipbook.size_UV);
+						this.set('particle_texture_uv', uv.flipbook.base_UV == undefined ? uv.uv : uv.flipbook.base_UV);
+						this.set('particle_texture_uv_size', uv.flipbook.size_UV == undefined ? uv.uv_size : uv.flipbook.size_UV);
 						this.set('particle_texture_uv_step', uv.flipbook.step_UV);
 						this.set('particle_texture_frames_per_second', uv.flipbook.frames_per_second);
 						this.set('particle_texture_max_frame', uv.flipbook.max_frame);
@@ -451,7 +469,7 @@ class Config {
 					if (c.gradient instanceof Array) {
 						let distance = 100 / (c.gradient.length-1);
 						c.gradient.forEach((color, i) => {
-							color = parseColor(color);
+							color = parseGradientColor(color);
 							var percent = distance * i;
 							gradient_points.push({percent, color})
 						})
@@ -462,7 +480,7 @@ class Config {
 						}
 						this.set('particle_color_range', max_time);
 						for (var time in c.gradient) {
-							var color = parseColor(c.gradient[time]);
+							var color = parseGradientColor(c.gradient[time]);
 							var percent = (parseFloat(time) / max_time) * 100;
 							gradient_points.push({color, percent})
 						}
