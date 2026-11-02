@@ -26,6 +26,10 @@ function parseColor(input) {
 	}
 	return '#' + input.substr(3, 6) + input.substr(1, 2);
 }
+function parseGradientColor(input) {
+	if (input instanceof Array && input.some(value => typeof value == 'string')) return input;
+	return parseColor(input);
+}
 
 function unwrapExpression(value) {
 	if (value instanceof Array) return value.map(unwrapExpression);
@@ -465,7 +469,7 @@ class Config {
 					if (c.gradient instanceof Array) {
 						let distance = 100 / (c.gradient.length-1);
 						c.gradient.forEach((color, i) => {
-							color = parseColor(color);
+							color = parseGradientColor(color);
 							var percent = distance * i;
 							gradient_points.push({percent, color})
 						})
@@ -476,7 +480,7 @@ class Config {
 						}
 						this.set('particle_color_range', max_time);
 						for (var time in c.gradient) {
-							var color = parseColor(c.gradient[time]);
+							var color = parseGradientColor(c.gradient[time]);
 							var percent = (parseFloat(time) / max_time) * 100;
 							gradient_points.push({color, percent})
 						}
