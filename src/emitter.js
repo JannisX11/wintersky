@@ -318,6 +318,7 @@ class Emitter extends EventClass {
 		this.age = 0;
 		this.view_age = 0;
 		this.enabled = true;
+		this.expired = false;
 		this.initialized = true;
 		this.scene.space.add(this.global_space);
 		let params = this.params();
@@ -416,7 +417,8 @@ class Emitter extends EventClass {
 			if (this.enabled && this.calculate(this.config.emitter_lifetime_expiration, params)) {
 				this.expire();
 			}
-			if (!this.enabled && this.calculate(this.config.emitter_lifetime_activation, params)) {
+			let can_restart = !this.expired || (!this.parent_emitter && this.loop_mode == 'looping');
+			if (!this.enabled && can_restart && this.calculate(this.config.emitter_lifetime_activation, params)) {
 				this.start()
 			}
 		} else if (!this.parent_emitter && (this.loop_mode == 'looping' || (this.loop_mode == 'auto' && this.config.emitter_lifetime_mode == 'looping'))) {
@@ -454,6 +456,7 @@ class Emitter extends EventClass {
 	}
 	expire() {
 		this.stop();
+		this.expired = true;
 		this.dispatchEvent('expire');
 		for (let event_id of this.config.emitter_events_expiration) {
 			this.runEvent(event_id);
