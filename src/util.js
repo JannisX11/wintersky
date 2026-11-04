@@ -51,6 +51,8 @@ export const Normals = {
 	n: new THREE.Vector3(0, 0, 0),
 }
 
+export const ParticleScope = Symbol('particle_scope');
+
 export function removeFromArray(array, item) {
 	let index = array.indexOf(item);
 	if (index >= 0) {
