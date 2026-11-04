@@ -27,7 +27,11 @@ function parseColor(input) {
 	return '#' + input.substr(3, 6) + input.substr(1, 2);
 }
 function parseGradientColor(input) {
-	if (input instanceof Array && input.some(value => typeof value == 'string')) return input;
+	if (input instanceof Array && input.some(value => typeof value == 'string')) {
+		let arr = input.map(v => v.toString());
+		while (arr.length < 4) {arr.push('1')}
+		return arr;
+	}
 	return parseColor(input);
 }
 

@@ -93,6 +93,14 @@
 		}
 		return '#' + input.substr(3, 6) + input.substr(1, 2);
 	}
+	function parseGradientColor(input) {
+		if (input instanceof Array && input.some(value => typeof value == 'string')) {
+			let arr = input.map(v => v.toString());
+			while (arr.length < 4) {arr.push('1');}
+			return arr;
+		}
+		return parseColor(input);
+	}
 
 	function unwrapExpression(value) {
 		if (value instanceof Array) return value.map(unwrapExpression);
@@ -306,8 +314,9 @@
 					this.set('emitter_lifetime_sleep_time',  comp('emitter_lifetime_looping').sleep_time);
 				}
 				if (comp('emitter_lifetime_expression')) {
+					let activation = comp('emitter_lifetime_expression').activation_expression;
 					this.set('emitter_lifetime_mode',  'expression');
-					this.set('emitter_lifetime_activation',  comp('emitter_lifetime_expression').activation_expression);
+					this.set('emitter_lifetime_activation',  activation == undefined ? 1 : activation);
 					this.set('emitter_lifetime_expiration',  comp('emitter_lifetime_expression').expiration_expression);
 				}
 				if (comp('emitter_lifetime_events')) {
@@ -479,8 +488,8 @@
 						}
 						if (uv.flipbook) {
 							this.set('particle_texture_mode', 'animated');
-							this.set('particle_texture_uv', uv.flipbook.base_UV);
-							this.set('particle_texture_uv_size', uv.flipbook.size_UV);
+							this.set('particle_texture_uv', uv.flipbook.base_UV == undefined ? uv.uv : uv.flipbook.base_UV);
+							this.set('particle_texture_uv_size', uv.flipbook.size_UV == undefined ? uv.uv_size : uv.flipbook.size_UV);
 							this.set('particle_texture_uv_step', uv.flipbook.step_UV);
 							this.set('particle_texture_frames_per_second', uv.flipbook.frames_per_second);
 							this.set('particle_texture_max_frame', uv.flipbook.max_frame);
@@ -532,7 +541,7 @@
 						if (c.gradient instanceof Array) {
 							let distance = 100 / (c.gradient.length-1);
 							c.gradient.forEach((color, i) => {
-								color = parseColor(color);
+								color = parseGradientColor(color);
 								var percent = distance * i;
 								gradient_points.push({percent, color});
 							});
@@ -543,7 +552,7 @@
 							}
 							this.set('particle_color_range', max_time);
 							for (var time in c.gradient) {
-								var color = parseColor(c.gradient[time]);
+								var color = parseGradientColor(c.gradient[time]);
 								var percent = (parseFloat(time) / max_time) * 100;
 								gradient_points.push({color, percent});
 							}
@@ -1112,7 +1121,15 @@
 				} else if (this.emitter.config.particle_color_mode === 'gradient') {
 					var i = this.emitter.calculate(this.emitter.config.particle_color_interpolant, params);
 					var r = this.emitter.calculate(this.emitter.config.particle_color_range, params);
-					var c = calculateGradient(this.emitter.config.particle_color_gradient, (i/r) * 100);
+					let gradient = this.emitter.config.particle_color_gradient;
+					if (gradient.some(point => point.color instanceof Array)) {
+						gradient = gradient.map(point => {
+							if (!(point.color instanceof Array)) return point;
+							let rgba = this.emitter.calculate(point.color, params, 'array');
+							return {percent: point.percent, color: {r: rgba[0] * 255, g: rgba[1] * 255, b: rgba[2] * 255, a: rgba.length > 3 ? rgba[3] : 1}};
+						});
+					}
+					var c = calculateGradient(gradient, (i/r) * 100);
 					this.setColor(c.r/255, c.g/255, c.b/255, c.a);
 
 				} else {
@@ -1527,6 +1544,7 @@
 			this.age = 0;
 			this.view_age = 0;
 			this.enabled = true;
+			this.expired = false;
 			this.initialized = true;
 			this.scene.space.add(this.global_space);
 			let params = this.params();
@@ -1625,7 +1643,8 @@
 				if (this.enabled && this.calculate(this.config.emitter_lifetime_expiration, params)) {
 					this.expire();
 				}
-				if (!this.enabled && this.calculate(this.config.emitter_lifetime_activation, params)) {
+				let can_restart = !this.expired || (!this.parent_emitter && this.loop_mode == 'looping');
+				if (!this.enabled && can_restart && this.calculate(this.config.emitter_lifetime_activation, params)) {
 					this.start();
 				}
 			} else if (!this.parent_emitter && (this.loop_mode == 'looping' || (this.loop_mode == 'auto' && this.config.emitter_lifetime_mode == 'looping'))) {
@@ -1663,6 +1682,7 @@
 		}
 		expire() {
 			this.stop();
+			this.expired = true;
 			this.dispatchEvent('expire');
 			for (let event_id of this.config.emitter_events_expiration) {
 				this.runEvent(event_id);
